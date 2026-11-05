@@ -90,7 +90,7 @@ python3 actions/check-links/check_links.py tests/fixtures/ok
 python3 -m compileall -q actions
 ```
 
-El workflow `selftest.yml` repite esas comprobaciones y exige que un ancla inexistente devuelva código 1.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1 y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
