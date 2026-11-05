@@ -1,0 +1,54 @@
+name: Compilar y probar .NET
+description: Restaura, compila, verifica el formato y ejecuta las pruebas de una solución .NET.
+inputs:
+  solution:
+    description: Solución o proyecto que se compila.
+    required: false
+    default: "EcommerceApi.sln"
+  dotnet-version:
+    description: Versión del SDK de .NET.
+    required: false
+    default: "10.0.x"
+  run-format:
+    description: Verifica el formato con `dotnet format`.
+    required: false
+    default: "true"
+  results-path:
+    description: Ruta de los resultados `.trx` que se publican.
+    required: false
+    default: "tests/**/TestResults/*.trx"
+runs:
+  using: composite
+  steps:
+    - name: Configurar .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Restaurar dependencias
+      shell: bash
+      run: dotnet restore "${{ inputs.solution }}"
+
+    - name: Compilar en Release
+      shell: bash
+      run: dotnet build "${{ inputs.solution }}" -c Release --no-restore
+
+    - name: Verificar formato
+      if: inputs.run-format == 'true'
+      shell: bash
+      run: dotnet format "${{ inputs.solution }}" --verify-no-changes --no-restore
+
+    - name: Ejecutar pruebas
+      shell: bash
+      run: >
+        dotnet test "${{ inputs.solution }}"
+        -c Release --no-build --no-restore
+        --logger "trx;LogFileName=test-results.trx"
+
+    - name: Publicar resultados de pruebas
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: test-results
+        path: ${{ inputs.results-path }}
+        if-no-files-found: ignore
