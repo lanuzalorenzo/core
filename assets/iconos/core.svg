@@ -9,5 +9,10 @@
   </defs>
   <rect width="64" height="64" rx="16" fill="url(#bg-core)"/>
   <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#38bdf8" stroke-width="2"/>
-  <path d="M17 37 L5 25 L11 19 L17 25 L35 7 L41 13 Z" fill="#f8fafc"/>
+  <g transform="translate(10 10)" fill="#f8fafc">
+    <rect x="1" y="15" width="13" height="14" rx="3"/>
+    <rect x="14" y="19" width="5" height="6"/>
+    <rect x="19" y="15" width="13" height="14" rx="3"/>
+    <path d="M35 13 L43 22 L35 31 Z"/>
+  </g>
 </svg>
