@@ -1,0 +1,44 @@
+name: Pruebas del repositorio
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: Enlaces del repositorio
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+      - name: Comprobar enlaces
+        uses: ./actions/check-links
+        with:
+          skip: tests/fixtures
+
+  fixtures:
+    name: Fixtures de la comprobación
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Las anclas reales pasan
+        run: python3 actions/check-links/check_links.py tests/fixtures/ok
+
+      - name: Un ancla inexistente falla
+        run: |
+          set +e
+          python3 actions/check-links/check_links.py tests/fixtures/broken
+          code=$?
+          set -e
+          if [[ "$code" -ne 1 ]]; then
+            echo "Se esperaba el código 1 y llegó $code"
+            exit 1
+          fi
