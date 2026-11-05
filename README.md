@@ -2,7 +2,7 @@
 
 # Acciones y workflows de CI
 
-Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su `ci.yml` y sus permisos.
+Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
 > **Estado (2026-11-05).** Dos acciones (enlaces y .NET) y dos workflows reutilizables que las envuelven. Versionado por etiqueta; los consumidores fijan la referencia.
 
