@@ -29,32 +29,9 @@ jobs:
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
-
-      - name: Configurar .NET
-        uses: actions/setup-dotnet@v6
+      - name: Compilar y probar
+        uses: lanuzalorenzo/core/actions/dotnet@v1.1
         with:
+          solution: ${{ inputs.solution }}
           dotnet-version: ${{ inputs.dotnet-version }}
-
-      - name: Restaurar dependencias
-        run: dotnet restore "${{ inputs.solution }}"
-
-      - name: Compilar en Release
-        run: dotnet build "${{ inputs.solution }}" -c Release --no-restore
-
-      - name: Verificar formato
-        if: inputs.run-format
-        run: dotnet format "${{ inputs.solution }}" --verify-no-changes --no-restore
-
-      - name: Ejecutar pruebas
-        run: >
-          dotnet test "${{ inputs.solution }}"
-          -c Release --no-build --no-restore
-          --logger "trx;LogFileName=test-results.trx"
-
-      - name: Publicar resultados de pruebas
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-results
-          path: tests/**/TestResults/*.trx
-          if-no-files-found: ignore
+          run-format: ${{ inputs.run-format }}
