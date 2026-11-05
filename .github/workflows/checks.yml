@@ -1,0 +1,31 @@
+name: Comprobaciones
+
+on:
+  workflow_call:
+    inputs:
+      root:
+        description: Directorio que se revisa, relativo al workspace.
+        type: string
+        required: false
+        default: "."
+      skip:
+        description: Directorios a omitir, separados por comas.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: Enlaces relativos y anclas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+      - name: Comprobar enlaces
+        uses: lanuzalorenzo/core/actions/check-links@v1
+        with:
+          root: ${{ inputs.root }}
+          skip: ${{ inputs.skip }}

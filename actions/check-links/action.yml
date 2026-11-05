@@ -1,0 +1,28 @@
+name: Comprobar enlaces relativos
+description: Valida rutas y anclas de los enlaces relativos en Markdown y HTML.
+inputs:
+  root:
+    description: Directorio que se revisa, relativo al workspace.
+    required: false
+    default: "."
+  skip:
+    description: Directorios a omitir, separados por comas.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Revisar enlaces
+      shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_SKIP: ${{ inputs.skip }}
+      run: |
+        args=("$INPUT_ROOT")
+        IFS=',' read -ra dirs <<< "$INPUT_SKIP"
+        for dir in "${dirs[@]}"; do
+          dir="${dir#"${dir%%[![:space:]]*}"}"
+          dir="${dir%"${dir##*[![:space:]]}"}"
+          [[ -n "$dir" ]] && args+=(--skip "$dir")
+        done
+        python3 "${{ github.action_path }}/check_links.py" "${args[@]}"
