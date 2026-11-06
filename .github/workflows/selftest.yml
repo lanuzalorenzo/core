@@ -43,6 +43,32 @@ jobs:
             exit 1
           fi
 
+  sshd-baseline:
+    name: Baseline de sshd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Las imágenes cerradas pasan
+        uses: ./actions/check-sshd-baseline
+        with:
+          root: tests/fixtures/sshd
+          skip: broken,broken-usepam,broken-apk-options
+
+      - name: Las imágenes abiertas fallan
+        run: |
+          for case in broken broken-usepam broken-apk-options; do
+            set +e
+            python3 actions/check-sshd-baseline/check_sshd_baseline.py "tests/fixtures/sshd/$case"
+            code=$?
+            set -e
+            if [[ "$code" -ne 1 ]]; then
+              echo "Se esperaba el código 1 en $case y llegó $code"
+              exit 1
+            fi
+          done
+
   secret-scanning:
     name: Detección de secretos (historial completo)
     runs-on: ubuntu-latest
