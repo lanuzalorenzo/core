@@ -30,7 +30,7 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
       - name: Compilar y probar
-        uses: lanuzalorenzo/core/actions/dotnet@v1.1
+        uses: lanuzalorenzo/core/actions/dotnet@v1.3
         with:
           solution: ${{ inputs.solution }}
           dotnet-version: ${{ inputs.dotnet-version }}
