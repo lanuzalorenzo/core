@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-05).** Dos acciones (enlaces y .NET) y dos workflows reutilizables que las envuelven. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-06).** Tres acciones (enlaces, .NET y Gitleaks) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -48,6 +48,20 @@ Restaura, compila en Release, verifica el formato y ejecuta las pruebas. Publica
 | `run-format` | `true` | Verifica el formato con `dotnet format`. |
 | `results-path` | `tests/**/TestResults/*.trx` | Resultados que se publican. |
 
+### `gitleaks`
+
+Escanea el historial completo del repositorio y falla si encuentra una credencial. Requiere que el job haga el `checkout` con `fetch-depth: 0`; si el clon es superficial, la acción falla en vez de dar un verde falso. Aplica el `.gitleaks.toml` que el consumidor tenga en la raíz, si lo hay.
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
+
+- uses: lanuzalorenzo/core/actions/gitleaks@v1.2
+```
+
+La versión de Gitleaks va fijada en la acción: los consumidores no la declaran.
+
 ## Workflows
 
 ### `checks.yml`
@@ -80,7 +94,7 @@ jobs:
 | `dotnet-version` | `10.0.x` | SDK que se instala. |
 | `run-format` | `true` | Verifica el formato con `dotnet format`. |
 
-Las tareas de seguridad —CodeQL, Trivy, contenedor y revisión de dependencias— se quedan en el repositorio que las necesita: dependen de su código y de sus permisos.
+Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, contenedor y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí.
 
 ## Verificación
 
@@ -94,7 +108,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.1` es la referencia actual. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
