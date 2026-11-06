@@ -147,7 +147,7 @@ python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/b
 python3 -m compileall -q actions
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` para la baseline de sshd y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` y `broken-apk-options/`, y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
