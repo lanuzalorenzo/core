@@ -69,6 +69,21 @@ jobs:
             fi
           done
 
+  container-publish:
+    name: Construcción de imagen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Construir la imagen de prueba
+        uses: ./actions/container-publish
+        with:
+          image: selftest
+          context: tests/fixtures/image
+          push: "false"
+          provenance: "false"
+
   secret-scanning:
     name: Detección de secretos (historial completo)
     runs-on: ubuntu-latest

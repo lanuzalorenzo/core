@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-06).** Cuatro acciones (enlaces, .NET, Gitleaks y baseline de sshd) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-06).** Cinco acciones (enlaces, .NET, Gitleaks, baseline de sshd y publicación de imagen) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -81,6 +81,28 @@ También se puede ejecutar a mano:
 python3 actions/check-sshd-baseline/check_sshd_baseline.py .
 ```
 
+### `container-publish`
+
+Construye la imagen con Buildx, la publica en el registro y adjunta procedencia. La mecánica es común; qué imagen se publica y con qué credenciales lo decide el consumidor, que declara `packages: write` en su workflow.
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `image` | obligatorio | Nombre dentro del registro, sin el registro delante. |
+| `registry` | `ghcr.io` | Registro de destino. |
+| `context` | `.` | Directorio de contexto. |
+| `dockerfile` | `Dockerfile` | Ruta del Dockerfile. |
+| `push` | `true` | En `false` solo construye. |
+| `provenance` | `mode=max` | Procedencia de Buildx; `false` la desactiva. |
+| `platforms` | `linux/amd64` | Plataformas separadas por comas. |
+| `build-args` | vacío | Argumentos, uno por línea. |
+| `secrets` | vacío | Secretos de BuildKit, `id=valor`, uno por línea. |
+| `cache-from` | vacío | Origen de caché. |
+| `cache-to` | vacío | Destino de caché. |
+| `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
+| `password` | vacío | Contraseña o token. |
+
+Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.3` llegará cuando la acción pase en un consumidor; hasta entonces no hay referencia publicada.
+
 ## Workflows
 
 ### `checks.yml`
@@ -113,7 +135,7 @@ jobs:
 | `dotnet-version` | `10.0.x` | SDK que se instala. |
 | `run-format` | `true` | Verifica el formato con `dotnet format`. |
 
-Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, escaneo de imagen y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye la imagen ni usa credenciales.
+Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, escaneo de imagen y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye ni usa credenciales. Construir y publicar una imagen es mecánica común y vive aquí; el consumidor decide qué imagen publica, con qué credenciales y qué permisos concede.
 
 ## Verificación
 
@@ -129,7 +151,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. `v1.3` añadirá `check-sshd-baseline` y pasará a ser la referencia cuando la acción se pruebe en un repositorio consumidor. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. `v1.3` añadirá `check-sshd-baseline` y `container-publish`, y pasará a ser la referencia cuando ambas se prueben en un repositorio consumidor. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
