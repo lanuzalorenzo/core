@@ -23,17 +23,19 @@ La línea base de los repos públicos se aplica aquí sin excepción: Gitleaks s
 python3 actions/check-links/check_links.py . --skip tests/fixtures
 python3 actions/check-links/check_links.py tests/fixtures/ok
 python3 actions/check-links/check_links.py tests/fixtures/broken   # debe salir 1
+python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
+python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 -m compileall -q actions
 gitleaks detect --source . --redact --exit-code 2
 ```
 
-`selftest.yml` repite las tres primeras en CI, escanea secretos y exige que un ancla inexistente devuelva 1. Un cambio en `check-links` se prueba ahí; uno en `dotnet` se prueba en un repositorio consumidor antes de etiquetar.
+`selftest.yml` repite las comprobaciones de enlaces y de sshd, construye la imagen de prueba sin publicarla, escanea secretos y exige que un ancla inexistente y cada uno de los tres Dockerfiles abiertos devuelvan 1. Un cambio en `dotnet` o en la publicación se prueba en un repositorio consumidor antes de etiquetar.
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.2`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`.
+- Los consumidores fijan una etiqueta (`v1.2`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-sshd-baseline` y `container-publish` aún no tienen: se referencian por SHA completo hasta `v1.3`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
-- Las tareas que dependen del código o los permisos de un consumidor —CodeQL, Trivy, contenedor, dependencias— se quedan en ese repositorio.
+- La mecánica común, igual para todos los consumidores, vive aquí: comprobar enlaces, compilar y probar .NET, escanear secretos, leer un `Dockerfile`, construir y publicar una imagen. El consumidor aporta lo suyo: qué solución compila, qué imagen publica, en qué registro y con qué credenciales. Las comprobaciones que dependen de su código o de su política —CodeQL, Trivy y su umbral, la revisión de dependencias— se quedan en su repositorio.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.
 
 ## Commits
