@@ -1,0 +1,109 @@
+name: Construir y publicar una imagen
+description: Construye una imagen con Buildx, la publica en el registro indicado y adjunta procedencia.
+inputs:
+  image:
+    description: Nombre de la imagen dentro del registro, sin el registro delante.
+    required: true
+  registry:
+    description: Registro donde se publica.
+    required: false
+    default: ghcr.io
+  context:
+    description: Directorio de contexto de la construcción.
+    required: false
+    default: "."
+  dockerfile:
+    description: Ruta del Dockerfile, relativa al contexto.
+    required: false
+    default: Dockerfile
+  push:
+    description: Publica la imagen. En `false` solo construye.
+    required: false
+    default: "true"
+  provenance:
+    description: Modo de procedencia de Buildx. `false` la desactiva.
+    required: false
+    default: mode=max
+  platforms:
+    description: Plataformas separadas por comas.
+    required: false
+    default: linux/amd64
+  build-args:
+    description: Argumentos de construcción, uno por línea.
+    required: false
+    default: ""
+  secrets:
+    description: Secretos de BuildKit, con formato `id=valor`, uno por línea.
+    required: false
+    default: ""
+  cache-from:
+    description: Origen de caché de Buildx.
+    required: false
+    default: ""
+  cache-to:
+    description: Destino de caché de Buildx.
+    required: false
+    default: ""
+  username:
+    description: Usuario del registro. Sin usuario ni contraseña no se inicia sesión.
+    required: false
+    default: ""
+  password:
+    description: Contraseña o token del registro.
+    required: false
+    default: ""
+outputs:
+  digest:
+    description: Digest de la imagen publicada.
+    value: ${{ steps.build.outputs.digest }}
+runs:
+  using: composite
+  steps:
+    - name: Preparar Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Iniciar sesión en el registro
+      if: inputs.username != '' && inputs.password != ''
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Calcular etiquetas y metadatos
+      id: metadata
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        ref="${GITHUB_REF_NAME//\//-}"
+        short="$(git rev-parse --short HEAD)"
+        {
+          echo "tags<<EOF"
+          echo "${REGISTRY}/${IMAGE}:${ref}"
+          echo "${REGISTRY}/${IMAGE}:sha-${short}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+        {
+          echo "labels<<EOF"
+          echo "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          echo "org.opencontainers.image.revision=${GITHUB_SHA}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Construir y publicar
+      id: build
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        push: ${{ inputs.push }}
+        platforms: ${{ inputs.platforms }}
+        tags: ${{ steps.metadata.outputs.tags }}
+        labels: ${{ steps.metadata.outputs.labels }}
+        build-args: ${{ inputs.build-args }}
+        secrets: ${{ inputs.secrets }}
+        provenance: ${{ inputs.provenance }}
+        cache-from: ${{ inputs.cache-from }}
+        cache-to: ${{ inputs.cache-to }}
