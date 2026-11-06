@@ -13,7 +13,7 @@ Automatización compartida de mis repositorios públicos: comprobaciones escrita
 Valida que los enlaces relativos de Markdown y HTML apunten a un archivo que existe y, cuando llevan `#`, a un titular o `id` real. Ignora enlaces absolutos, correo y esquemas como `data:`.
 
 ```yaml
-- uses: lanuzalorenzo/core/actions/check-links@v1.1
+- uses: lanuzalorenzo/core/actions/check-links@v1.3
   with:
     root: .
     skip: src,dist
@@ -36,7 +36,7 @@ python3 actions/check-links/check_links.py docs --skip generado
 Restaura, compila en Release, verifica el formato y ejecuta las pruebas. Publica el `.trx` como artefacto.
 
 ```yaml
-- uses: lanuzalorenzo/core/actions/dotnet@v1.1
+- uses: lanuzalorenzo/core/actions/dotnet@v1.3
   with:
     solution: EcommerceApi.sln
 ```
@@ -57,7 +57,7 @@ Escanea el historial completo del repositorio y falla si encuentra una credencia
   with:
     fetch-depth: 0
 
-- uses: lanuzalorenzo/core/actions/gitleaks@v1.2
+- uses: lanuzalorenzo/core/actions/gitleaks@v1.3
 ```
 
 La versión de Gitleaks va fijada en la acción: los consumidores no la declaran.
@@ -66,7 +66,7 @@ La versión de Gitleaks va fijada en la acción: los consumidores no la declaran
 
 Avisa cuando un `Dockerfile` instala `sshd` sobre una base musl —Alpine y sus derivados— y no desactiva la autenticación por contraseña. No construye la imagen: lee el archivo, igual que `check-links` lee Markdown.
 
-Todavía no hay etiqueta publicada: se llamará con la que salga de la prueba en un repositorio consumidor.
+Se referencia con `@v1.3`, la misma etiqueta que el resto de acciones publicadas.
 
 | Entrada | Por defecto | Qué hace |
 |---|---|---|
@@ -101,7 +101,7 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
 | `password` | vacío | Contraseña o token. |
 
-Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.3` llegará cuando la acción pase en un consumidor; hasta entonces no hay referencia publicada.
+Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.3` ya está publicada y es la referencia de los consumidores.
 
 ## Workflows
 
@@ -112,7 +112,7 @@ Workflow reutilizable con la comprobación de enlaces. Acepta `root` y `skip`.
 ```yaml
 jobs:
   checks:
-    uses: lanuzalorenzo/core/.github/workflows/checks.yml@v1.1
+    uses: lanuzalorenzo/core/.github/workflows/checks.yml@v1.3
     with:
       root: .
 ```
@@ -124,7 +124,7 @@ Compila, verifica el formato y ejecuta las pruebas de una solución .NET. Public
 ```yaml
 jobs:
   build:
-    uses: lanuzalorenzo/core/.github/workflows/dotnet.yml@v1.1
+    uses: lanuzalorenzo/core/.github/workflows/dotnet.yml@v1.3
     with:
       solution: EcommerceApi.sln
 ```
@@ -151,7 +151,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. `v1.3` añadirá `check-sshd-baseline` y `container-publish`, y pasará a ser la referencia cuando ambas se prueben en un repositorio consumidor. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.3` es la referencia actual: incluye `check-sshd-baseline` y `container-publish`, probados en `lab-api`. `v1.1` y `v1.2` siguen publicadas para los consumidores que aún no las han subido. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
