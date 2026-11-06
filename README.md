@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-06).** Tres acciones (enlaces, .NET y Gitleaks) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-06).** Cuatro acciones (enlaces, .NET, Gitleaks y baseline de sshd) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -62,6 +62,25 @@ Escanea el historial completo del repositorio y falla si encuentra una credencia
 
 La versión de Gitleaks va fijada en la acción: los consumidores no la declaran.
 
+### `check-sshd-baseline`
+
+Avisa cuando un `Dockerfile` instala `sshd` sobre una base musl —Alpine y sus derivados— y no desactiva la autenticación por contraseña. No construye la imagen: lee el archivo, igual que `check-links` lee Markdown.
+
+Todavía no hay etiqueta publicada: se llamará con la que salga de la prueba en un repositorio consumidor.
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `root` | `.` | Directorio o Dockerfile que se revisa, relativo al workspace. |
+| `skip` | vacío | Directorios que no se recorren, separados por comas. |
+
+Solo ve configuración declarada en el `Dockerfile`. Que exista una cuenta con `*` y otra con un hash real es estado de ejecución y no se deduce del archivo. Tampoco lee una configuración copiada con `COPY` ni comprueba que el `sshd_config` de la base incluya `sshd_config.d`.
+
+También se puede ejecutar a mano:
+
+```bash
+python3 actions/check-sshd-baseline/check_sshd_baseline.py .
+```
+
 ## Workflows
 
 ### `checks.yml`
@@ -94,21 +113,23 @@ jobs:
 | `dotnet-version` | `10.0.x` | SDK que se instala. |
 | `run-format` | `true` | Verifica el formato con `dotnet format`. |
 
-Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, contenedor y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí.
+Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, escaneo de imagen y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye la imagen ni usa credenciales.
 
 ## Verificación
 
 ```bash
 python3 actions/check-links/check_links.py . --skip tests/fixtures
 python3 actions/check-links/check_links.py tests/fixtures/ok
+python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
+python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 -m compileall -q actions
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1 y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` para la baseline de sshd y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
-- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.2` es la referencia actual; `v1.1` sigue publicada para los consumidores que aún no la han subido. `v1.3` añadirá `check-sshd-baseline` y pasará a ser la referencia cuando la acción se pruebe en un repositorio consumidor. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
