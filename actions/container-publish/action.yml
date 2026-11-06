@@ -76,9 +76,16 @@ runs:
       env:
         REGISTRY: ${{ inputs.registry }}
         IMAGE: ${{ inputs.image }}
+        CONTEXT: ${{ inputs.context }}
+        DOCKERFILE: ${{ inputs.dockerfile }}
       run: |
         ref="${GITHUB_REF_NAME//\//-}"
         short="$(git rev-parse --short HEAD)"
+        file="${DOCKERFILE:-Dockerfile}"
+        case "$file" in
+          /*) ;;
+          *) file="${CONTEXT%/}/$file" ;;
+        esac
         {
           echo "tags<<EOF"
           echo "${REGISTRY}/${IMAGE}:${ref}"
@@ -91,13 +98,14 @@ runs:
           echo "org.opencontainers.image.revision=${GITHUB_SHA}"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
+        echo "file=${file}" >> "$GITHUB_OUTPUT"
 
     - name: Construir y publicar
       id: build
       uses: docker/build-push-action@v6
       with:
         context: ${{ inputs.context }}
-        file: ${{ inputs.dockerfile }}
+        file: ${{ steps.metadata.outputs.file }}
         push: ${{ inputs.push }}
         platforms: ${{ inputs.platforms }}
         tags: ${{ steps.metadata.outputs.tags }}
