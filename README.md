@@ -92,7 +92,7 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `context` | `.` | Directorio de contexto. |
 | `dockerfile` | `Dockerfile` | Ruta del Dockerfile. |
 | `push` | `true` | En `false` solo construye. |
-| `provenance` | `mode=max` | Procedencia de Buildx; `false` la desactiva. |
+| `provenance` | `mode=max` | Procedencia de Buildx; se desactiva sola cuando `push` es `false`. |
 | `platforms` | `linux/amd64` | Plataformas separadas por comas. |
 | `build-args` | vacío | Argumentos, uno por línea. |
 | `secrets` | vacío | Secretos de BuildKit, `id=valor`, uno por línea. |

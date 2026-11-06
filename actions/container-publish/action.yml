@@ -78,6 +78,8 @@ runs:
         IMAGE: ${{ inputs.image }}
         CONTEXT: ${{ inputs.context }}
         DOCKERFILE: ${{ inputs.dockerfile }}
+        PUSH: ${{ inputs.push }}
+        PROVENANCE: ${{ inputs.provenance }}
       run: |
         ref="${GITHUB_REF_NAME//\//-}"
         short="$(git rev-parse --short HEAD)"
@@ -86,6 +88,10 @@ runs:
           /*) ;;
           *) file="${CONTEXT%/}/$file" ;;
         esac
+        provenance="$PROVENANCE"
+        if [ "$PUSH" != "true" ]; then
+          provenance="false"
+        fi
         {
           echo "tags<<EOF"
           echo "${REGISTRY}/${IMAGE}:${ref}"
@@ -99,6 +105,7 @@ runs:
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
         echo "file=${file}" >> "$GITHUB_OUTPUT"
+        echo "provenance=${provenance}" >> "$GITHUB_OUTPUT"
 
     - name: Construir y publicar
       id: build
@@ -112,6 +119,6 @@ runs:
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build-args }}
         secrets: ${{ inputs.secrets }}
-        provenance: ${{ inputs.provenance }}
+        provenance: ${{ steps.metadata.outputs.provenance }}
         cache-from: ${{ inputs.cache-from }}
         cache-to: ${{ inputs.cache-to }}
