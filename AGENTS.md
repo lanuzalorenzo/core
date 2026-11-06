@@ -31,7 +31,7 @@ gitleaks detect --source . --redact --exit-code 2
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.1`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`.
+- Los consumidores fijan una etiqueta (`v1.2`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
 - Las tareas que dependen del código o los permisos de un consumidor —CodeQL, Trivy, contenedor, dependencias— se quedan en ese repositorio.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.
