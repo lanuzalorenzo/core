@@ -33,7 +33,7 @@ gitleaks detect --source . --redact --exit-code 2
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.3`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-sshd-baseline` y `container-publish` ya están incluidos en `v1.3`.
+- Los consumidores fijan una etiqueta (`v1.4`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-sshd-baseline` y `container-publish` ya están incluidos en `v1.4`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
 - La mecánica común, igual para todos los consumidores, vive aquí: comprobar enlaces, compilar y probar .NET, escanear secretos, leer un `Dockerfile`, construir y publicar una imagen. El consumidor aporta lo suyo: qué solución compila, qué imagen publica, en qué registro y con qué credenciales. Las comprobaciones que dependen de su código o de su política —CodeQL, Trivy y su umbral, la revisión de dependencias— se quedan en su repositorio.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.
