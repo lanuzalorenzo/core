@@ -66,7 +66,7 @@ La versión de Gitleaks va fijada en la acción: los consumidores no la declaran
 
 Avisa cuando un `Dockerfile` instala `sshd` sobre una base musl —Alpine y sus derivados— y no desactiva la autenticación por contraseña. No construye la imagen: lee el archivo, igual que `check-links` lee Markdown.
 
-Se referencia con `@v1.4`, la misma etiqueta que el resto de acciones publicadas.
+Se referencia con `@v1.4`, igual que `check-links`, `dotnet` y `gitleaks`.
 
 | Entrada | Por defecto | Qué hace |
 |---|---|---|
@@ -101,7 +101,7 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
 | `password` | vacío | Contraseña o token. |
 
-Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta publicada incluye esta acción.
+Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.4` incluye esta acción.
 
 ### `sast`
 
@@ -115,7 +115,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v7
-  - uses: lanuzalorenzo/core/actions/sast@v1.5
+  - uses: lanuzalorenzo/core/actions/sast@v1.6
     with:
       languages: csharp
 ```
@@ -132,7 +132,7 @@ steps:
 Ejecuta Trivy sobre dependencias (`fs`), una imagen (`image`) o infraestructura como código (`config`), falla cuando hay hallazgos en el umbral y publica el SARIF. El consumidor concede `security-events: write` cuando `upload` es `true`.
 
 ```yaml
-- uses: lanuzalorenzo/core/actions/scan@v1.5
+- uses: lanuzalorenzo/core/actions/scan@v1.6
   with:
     scan-type: image
     image-ref: ecommerce-api:${{ github.sha }}
@@ -180,7 +180,7 @@ Arranca los servicios del consumidor, espera a que las URLs respondan y ejecuta 
 
 La auditoría de las dependencias de la prueba y su umbral se quedan en el repositorio que la escribe, como el resto de la revisión de dependencias. La acción no sube artefactos: cuando la prueba falla, escribe las últimas cincuenta líneas del arranque en la salida del job —el lanzador no debe imprimir secretos— y deja que el consumidor decida qué guardar. Si el lanzador termina antes de que una URL responda, falla en el acto, sin esperar el tiempo máximo.
 
-La etiqueta `v1.5` se crea al publicar este cambio; hasta entonces el ejemplo no resuelve. La verificación de este repositorio prueba la mecánica —arranque, espera, códigos y limpieza— con un servicio mínimo; el navegador y el recorrido real se prueban en un consumidor antes de dar la etiqueta por buena.
+La etiqueta `v1.5` incluye esta acción. La verificación de este repositorio prueba la mecánica —arranque, espera, códigos y limpieza— con un servicio mínimo; el navegador y el recorrido real se prueban en un consumidor antes de dar la etiqueta por buena.
 
 ## Workflows
 
@@ -234,7 +234,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.4` es la referencia actual. La próxima etiqueta, `v1.5`, añade `browser-e2e`, `sast` y `scan` sobre `v1.4`, que sigue publicada y sigue siendo la referencia hasta que los consumidores suban. `v1.1` y `v1.2` también siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
