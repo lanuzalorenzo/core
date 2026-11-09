@@ -1,0 +1,8 @@
+{
+  "name": "fixture-e2e",
+  "private": true,
+  "description": "Servicio mínimo para probar la acción browser-e2e sin navegador",
+  "scripts": {
+    "test": "node check.mjs"
+  }
+}

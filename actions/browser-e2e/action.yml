@@ -1,0 +1,72 @@
+name: Prueba de interfaz en navegador
+description: Instala el navegador, arranca los servicios, espera a que respondan y ejecuta la prueba de interfaz.
+inputs:
+  working-directory:
+    description: Directorio de la prueba, con su `package.json`, relativo al workspace.
+    required: false
+    default: "."
+  start-script:
+    description: Script que arranca los servicios. Se ejecuta desde la raíz del workspace y queda en segundo plano hasta el final de la prueba.
+    required: true
+  wait-urls:
+    description: URLs que deben responder antes de lanzar la prueba, separadas por comas.
+    required: false
+    default: ""
+  test-command:
+    description: Comando que ejecuta la prueba, desde el directorio de la prueba.
+    required: false
+    default: npm test
+  install-command:
+    description: Comando que instala las dependencias de la prueba.
+    required: false
+    default: npm ci
+  node-version:
+    description: Versión de Node.
+    required: false
+    default: "22"
+  browser:
+    description: Navegador de Playwright que se instala.
+    required: false
+    default: chromium
+  install-browser:
+    description: Instala el navegador con sus dependencias. En `false` la prueba usa lo que ya haya.
+    required: false
+    default: "true"
+  timeout-seconds:
+    description: Tiempo máximo de espera de cada URL.
+    required: false
+    default: "180"
+runs:
+  using: composite
+  steps:
+    - name: Configurar Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+    - name: Instalar dependencias de la prueba
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        INSTALL_COMMAND: ${{ inputs.install-command }}
+      run: bash -c "$INSTALL_COMMAND"
+
+    - name: Instalar el navegador
+      if: inputs.install-browser == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BROWSER: ${{ inputs.browser }}
+      run: npx playwright install --with-deps "$BROWSER"
+
+    - name: Arrancar los servicios y probar
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        START_SCRIPT: ${{ inputs.start-script }}
+        WAIT_URLS: ${{ inputs.wait-urls }}
+        TEST_COMMAND: ${{ inputs.test-command }}
+        TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+      run: bash "${{ github.action_path }}/browser_e2e.sh"

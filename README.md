@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-06).** Cinco acciones (enlaces, .NET, Gitleaks, baseline de sshd y publicación de imagen) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-09).** Seis acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen y prueba de interfaz) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -103,6 +103,34 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 
 Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.4` ya está publicada y es la referencia de los consumidores.
 
+### `browser-e2e`
+
+Arranca los servicios del consumidor, espera a que las URLs respondan y ejecuta la prueba de interfaz en el navegador que instala. La prueba —qué se comprueba, a qué ancho y con qué datos— sigue siendo del consumidor; la mecánica —instalar, esperar, lanzar y recoger los registros si falla— es la misma en todos.
+
+```yaml
+- uses: lanuzalorenzo/core/actions/browser-e2e@v1.5
+  with:
+    working-directory: tests/e2e
+    start-script: tests/e2e/start.sh
+    wait-urls: http://localhost:5094/health, http://localhost:5077/
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `working-directory` | `.` | Directorio de la prueba, con su `package.json`. |
+| `start-script` | obligatorio | Arranca los servicios desde la raíz del workspace y sigue en primer plano mientras duren. Se cierra al terminar la prueba, con sus procesos hijos. |
+| `wait-urls` | vacío | URLs que deben responder antes de lanzar la prueba, separadas por comas. |
+| `test-command` | `npm test` | Comando de la prueba, ejecutado en `working-directory`. |
+| `install-command` | `npm ci` | Instalación de las dependencias de la prueba. |
+| `node-version` | `22` | Versión de Node. |
+| `browser` | `chromium` | Navegador de Playwright. |
+| `install-browser` | `true` | Instala el navegador con sus dependencias; en `false` usa el que ya haya. |
+| `timeout-seconds` | `180` | Espera máxima de cada URL. |
+
+La auditoría de las dependencias de la prueba y su umbral se quedan en el repositorio que la escribe, como el resto de la revisión de dependencias. La acción no sube artefactos: cuando la prueba falla, escribe las últimas cincuenta líneas del arranque en la salida del job —el lanzador no debe imprimir secretos— y deja que el consumidor decida qué guardar. Si el lanzador termina antes de que una URL responda, falla en el acto, sin esperar el tiempo máximo.
+
+La etiqueta `v1.5` se crea al publicar este cambio; hasta entonces el ejemplo no resuelve. La verificación de este repositorio prueba la mecánica —arranque, espera, códigos y limpieza— con un servicio mínimo; el navegador y el recorrido real se prueban en un consumidor antes de dar la etiqueta por buena.
+
 ## Workflows
 
 ### `checks.yml`
@@ -145,13 +173,16 @@ python3 actions/check-links/check_links.py tests/fixtures/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 -m compileall -q actions
+GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
+  WAIT_URLS=http://127.0.0.1:8099/ WORKING_DIRECTORY=tests/fixtures/e2e \
+  TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` y `broken-apk-options/`, y escanea secretos. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` y `broken-apk-options/`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
-- `v1.4` es la referencia actual: incluye `check-sshd-baseline` y `container-publish`, probados en `lab-api`. `v1.1` y `v1.2` siguen publicadas para los consumidores que aún no las han subido. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.4` es la referencia actual. La próxima etiqueta, `v1.5`, añade `browser-e2e` sobre `v1.4`, que sigue publicada y sigue siendo la referencia hasta que los consumidores suban. `v1.1` y `v1.2` también siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.

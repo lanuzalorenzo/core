@@ -26,6 +26,7 @@ python3 actions/check-links/check_links.py tests/fixtures/broken   # debe salir 
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 -m compileall -q actions
+GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh WAIT_URLS=http://127.0.0.1:8099/ WORKING_DIRECTORY=tests/fixtures/e2e TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 gitleaks detect --source . --redact --exit-code 2
 ```
 
@@ -33,7 +34,7 @@ gitleaks detect --source . --redact --exit-code 2
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.4`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-sshd-baseline` y `container-publish` ya están incluidos en `v1.4`.
+- Los consumidores fijan una etiqueta (`v1.4`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-sshd-baseline` y `container-publish` están en `v1.4`; `browser-e2e` entra en `v1.5`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
 - La mecánica común, igual para todos los consumidores, vive aquí: comprobar enlaces, compilar y probar .NET, escanear secretos, leer un `Dockerfile`, construir y publicar una imagen. El consumidor aporta lo suyo: qué solución compila, qué imagen publica, en qué registro y con qué credenciales. Las comprobaciones que dependen de su código o de su política —CodeQL, Trivy y su umbral, la revisión de dependencias— se quedan en su repositorio.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.
