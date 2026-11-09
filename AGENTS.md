@@ -15,7 +15,7 @@ La línea base de los repos públicos se aplica aquí sin excepción: Gitleaks s
 - `actions/<nombre>/`: acción compuesta (`action.yml`), con la lógica en sus pasos o en un script propio si lo hay.
 - `.github/workflows/`: workflows reutilizables (`workflow_call`), `selftest.yml` y `dependabot-auto-merge.yml`.
 - `tests/fixtures/`: casos que deben pasar y fallar. Un ancla inexistente tiene que devolver código 1.
-- `docs/`: guías operativas; la de abrir un repositorio privado, en `docs/publicar-un-repositorio.md`.
+- `docs/`: guías operativas; crear un repositorio, en `docs/crear-un-repositorio.md`, y abrir uno privado, en `docs/publicar-un-repositorio.md`.
 - `assets/iconos/`: icono del repositorio, con sus valores en línea.
 
 ## Verificación
