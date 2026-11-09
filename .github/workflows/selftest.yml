@@ -69,6 +69,44 @@ jobs:
             fi
           done
 
+  browser-e2e:
+    name: Prueba de interfaz
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: El servicio que responde pasa
+        uses: ./actions/browser-e2e
+        with:
+          working-directory: tests/fixtures/e2e
+          start-script: tests/fixtures/e2e/start.sh
+          wait-urls: http://127.0.0.1:8099/
+          install-browser: "false"
+
+      - name: Una URL que no responde falla
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          START_SCRIPT: tests/fixtures/e2e/start.sh
+          WAIT_URLS: http://127.0.0.1:8098/
+          WORKING_DIRECTORY: tests/fixtures/e2e
+          TEST_COMMAND: node check.mjs
+          TIMEOUT_SECONDS: "5"
+        run: |
+          set +e
+          output="$(bash actions/browser-e2e/browser_e2e.sh 2>&1)"
+          code=$?
+          set -e
+          echo "$output"
+          if [[ "$code" -ne 1 ]]; then
+            echo "Se esperaba el código 1 y llegó $code"
+            exit 1
+          fi
+          if [[ "$output" != *"no respondió"* ]]; then
+            echo "Se esperaba el aviso de la URL que no responde"
+            exit 1
+          fi
+
   container-publish:
     name: Construcción de imagen
     runs-on: ubuntu-latest
