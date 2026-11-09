@@ -1,5 +1,5 @@
 name: Construir y publicar una imagen
-description: Construye una imagen con Buildx, la publica en el registro indicado y adjunta procedencia.
+description: Construye una imagen con Buildx, la publica en el registro indicado o la deja en el daemon local con `load`, y adjunta procedencia al publicar.
 inputs:
   image:
     description: Nombre de la imagen dentro del registro, sin el registro delante.
@@ -20,6 +20,10 @@ inputs:
     description: Publica la imagen. En `false` solo construye.
     required: false
     default: "true"
+  load:
+    description: Carga la imagen en el daemon local con la etiqueta del `ref`. Solo vale con `push` en `false` y una sola plataforma; no se puede publicar y cargar a la vez.
+    required: false
+    default: "false"
   provenance:
     description: Modo de procedencia de Buildx. `false` la desactiva.
     required: false
@@ -56,6 +60,9 @@ outputs:
   digest:
     description: Digest de la imagen publicada.
     value: ${{ steps.build.outputs.digest }}
+  tag:
+    description: Etiqueta de la imagen con el `ref` de la ejecución; con `load` en `true` es la que queda en el daemon local.
+    value: ${{ steps.metadata.outputs.tag }}
 runs:
   using: composite
   steps:
@@ -79,8 +86,18 @@ runs:
         CONTEXT: ${{ inputs.context }}
         DOCKERFILE: ${{ inputs.dockerfile }}
         PUSH: ${{ inputs.push }}
+        LOAD: ${{ inputs.load }}
+        PLATFORMS: ${{ inputs.platforms }}
         PROVENANCE: ${{ inputs.provenance }}
       run: |
+        if [ "$PUSH" = "true" ] && [ "$LOAD" = "true" ]; then
+          echo "::error::load y push no se combinan: una imagen no se publica y se carga a la vez."
+          exit 1
+        fi
+        if [ "$LOAD" = "true" ] && [ "${PLATFORMS}" != "${PLATFORMS%%,*}" ]; then
+          echo "::error::load exige una sola plataforma; ${PLATFORMS} no se puede cargar en el daemon local."
+          exit 1
+        fi
         ref="${GITHUB_REF_NAME//\//-}"
         short="$(git rev-parse --short HEAD)"
         file="${DOCKERFILE:-Dockerfile}"
@@ -92,12 +109,14 @@ runs:
         if [ "$PUSH" != "true" ]; then
           provenance="false"
         fi
+        tag="${REGISTRY}/${IMAGE}:${ref}"
         {
           echo "tags<<EOF"
-          echo "${REGISTRY}/${IMAGE}:${ref}"
+          echo "$tag"
           echo "${REGISTRY}/${IMAGE}:sha-${short}"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
         {
           echo "labels<<EOF"
           echo "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
@@ -114,6 +133,7 @@ runs:
         context: ${{ inputs.context }}
         file: ${{ steps.metadata.outputs.file }}
         push: ${{ inputs.push }}
+        load: ${{ inputs.load }}
         platforms: ${{ inputs.platforms }}
         tags: ${{ steps.metadata.outputs.tags }}
         labels: ${{ steps.metadata.outputs.labels }}
