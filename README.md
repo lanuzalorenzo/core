@@ -216,6 +216,10 @@ jobs:
 
 Las tareas de seguridad que dependen del código, del umbral o de los permisos del consumidor se ejecutan con las acciones `sast` y `scan`; lo que cambia es qué se analiza, con qué umbral y quién concede `security-events: write`. La revisión de dependencias de un pull request sigue en su repositorio. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye ni usa credenciales. Construir y publicar una imagen es mecánica común y vive aquí; el consumidor decide qué imagen publica, con qué credenciales y qué permisos concede.
 
+## Publicar un repositorio
+
+El procedimiento para pasar un repositorio de privado a público —historial, licencia, datos, metadatos, línea base, protección y enlaces— está en [`docs/publicar-un-repositorio.md`](docs/publicar-un-repositorio.md). Las acciones de este repositorio son la parte mecánica de esa línea base.
+
 ## Verificación
 
 ```bash
