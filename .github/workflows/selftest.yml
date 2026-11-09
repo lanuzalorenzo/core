@@ -162,7 +162,7 @@ jobs:
               for result in run.get("results", [])
           ]
           ids = {result.get("ruleId") for result in results}
-          if not ids & {"DS002", "AVD-DS-0002"}:
+          if not ids & {"DS-0002", "DS002", "AVD-DS-0002"}:
               raise SystemExit(
                   "El SARIF no contiene un resultado DS002: "
                   f"el fallo no fue el umbral esperado (reglas: {sorted(ids)})"
