@@ -1,0 +1,113 @@
+name: Escanear con Trivy
+description: "Escanea dependencias, una imagen o infraestructura como código con Trivy, aplica el umbral del consumidor y publica el SARIF. El consumidor concede `security-events: write` cuando publica."
+inputs:
+  scan-type:
+    description: Tipo de escaneo, `fs`, `image` o `config`.
+    required: false
+    default: fs
+  scan-ref:
+    description: Ruta que se escanea en `fs` y en `config`, relativa al workspace.
+    required: false
+    default: "."
+  image-ref:
+    description: Imagen que se escanea cuando `scan-type` es `image`.
+    required: false
+    default: ""
+  severity:
+    description: Severidades que cuentan como hallazgo.
+    required: false
+    default: CRITICAL,HIGH
+  exit-code:
+    description: Código de salida cuando hay hallazgos por encima del umbral.
+    required: false
+    default: "1"
+  ignore-unfixed:
+    description: Ignora vulnerabilidades sin corrección disponible en `fs` e `image`. En `config` no se aplica.
+    required: false
+    default: "true"
+  skip-dirs:
+    description: Directorios que se omiten en `fs`, separados por comas.
+    required: false
+    default: "**/.git"
+  trivyignores:
+    description: Archivo de excepciones de Trivy, relativo al workspace. Vacío deja que Trivy use `.trivyignore` si existe.
+    required: false
+    default: ""
+  output:
+    description: Ruta del SARIF, relativa al workspace. Vacío usa `trivy-<scan-type>.sarif`.
+    required: false
+    default: ""
+  category:
+    description: Categoría con la que se publica el SARIF. Vacío usa `trivy-<scan-type>`.
+    required: false
+    default: ""
+  upload:
+    description: Publica el SARIF en code scanning. En `false` solo genera el archivo.
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - name: Resolver la configuración del escaneo
+      id: config
+      shell: bash
+      env:
+        SCAN_TYPE: ${{ inputs.scan-type }}
+        IMAGE_REF: ${{ inputs.image-ref }}
+        IGNORE_UNFIXED: ${{ inputs.ignore-unfixed }}
+        SKIP_DIRS: ${{ inputs.skip-dirs }}
+        OUTPUT: ${{ inputs.output }}
+        CATEGORY: ${{ inputs.category }}
+      run: |
+        case "$SCAN_TYPE" in
+          fs|image|config) ;;
+          *)
+            echo "::error::scan-type debe ser fs, image o config; llegó '$SCAN_TYPE'."
+            exit 1
+            ;;
+        esac
+        if [[ "$SCAN_TYPE" == "image" && -z "$IMAGE_REF" ]]; then
+          echo "::error::scan-type image exige image-ref."
+          exit 1
+        fi
+        if [[ "$SCAN_TYPE" == "image" ]]; then
+          ignore_unfixed="$IGNORE_UNFIXED"
+          skip_dirs=""
+        elif [[ "$SCAN_TYPE" == "config" ]]; then
+          ignore_unfixed="false"
+          skip_dirs=""
+        else
+          ignore_unfixed="$IGNORE_UNFIXED"
+          skip_dirs="$SKIP_DIRS"
+        fi
+        echo "output=${OUTPUT:-trivy-${SCAN_TYPE}.sarif}" >> "$GITHUB_OUTPUT"
+        echo "category=${CATEGORY:-trivy-${SCAN_TYPE}}" >> "$GITHUB_OUTPUT"
+        echo "ignore-unfixed=$ignore_unfixed" >> "$GITHUB_OUTPUT"
+        echo "skip-dirs=$skip_dirs" >> "$GITHUB_OUTPUT"
+
+    - name: Escanear con Trivy
+      uses: aquasecurity/trivy-action@v0.36.0
+      env:
+        # Los checks de configuración viajan dentro del binario fijado; sin
+        # actualización remota, el umbral y el catálogo no cambian solos.
+        TRIVY_SKIP_CHECK_UPDATE: "true"
+      with:
+        version: 'v0.76.0'
+        scan-type: ${{ inputs.scan-type }}
+        scan-ref: ${{ inputs.scan-ref }}
+        image-ref: ${{ inputs.image-ref }}
+        format: 'sarif'
+        output: ${{ steps.config.outputs.output }}
+        severity: ${{ inputs.severity }}
+        exit-code: ${{ inputs.exit-code }}
+        ignore-unfixed: ${{ steps.config.outputs.ignore-unfixed }}
+        skip-dirs: ${{ steps.config.outputs.skip-dirs }}
+        trivyignores: ${{ inputs.trivyignores }}
+        limit-severities-for-sarif: 'true'
+
+    - name: Publicar hallazgos
+      if: always() && inputs.upload == 'true' && hashFiles(steps.config.outputs.output) != ''
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.config.outputs.output }}
+        category: ${{ steps.config.outputs.category }}

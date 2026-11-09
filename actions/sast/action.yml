@@ -1,0 +1,40 @@
+name: Análisis estático con CodeQL
+description: "Inicializa CodeQL con las consultas de seguridad extendidas, compila el proyecto y publica el SARIF. El consumidor concede `security-events: write`."
+inputs:
+  languages:
+    description: Lenguajes de CodeQL separados por comas, por ejemplo `csharp` o `csharp,javascript-typescript`.
+    required: true
+  queries:
+    description: Paquete de consultas de CodeQL.
+    required: false
+    default: security-extended
+  category:
+    description: Categoría con la que se publica el análisis. Vacío deja la categoría por defecto de CodeQL, `/language:<lenguaje>`.
+    required: false
+    default: ""
+  dotnet-version:
+    description: SDK de .NET que se instala cuando `languages` incluye `csharp`. Vacío no lo instala.
+    required: false
+    default: "10.0.x"
+runs:
+  using: composite
+  steps:
+    - name: Configurar .NET para la extracción
+      if: contains(inputs.languages, 'csharp') && inputs.dotnet-version != ''
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Inicializar CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ inputs.languages }}
+        queries: ${{ inputs.queries }}
+
+    - name: Compilar para CodeQL
+      uses: github/codeql-action/autobuild@v4
+
+    - name: Analizar y publicar con CodeQL
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: ${{ inputs.category }}
