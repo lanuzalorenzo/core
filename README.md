@@ -83,7 +83,7 @@ python3 actions/check-sshd-baseline/check_sshd_baseline.py .
 
 ### `container-publish`
 
-Construye la imagen con Buildx, la publica en el registro y adjunta procedencia. La mecánica es común; qué imagen se publica y con qué credenciales lo decide el consumidor, que declara `packages: write` en su workflow.
+Construye la imagen con Buildx y la publica en el registro, o la deja en el daemon local con `load`, adjuntando procedencia al publicar. La mecánica es común; qué imagen se publica y con qué credenciales lo decide el consumidor, que declara `packages: write` en su workflow.
 
 | Entrada | Por defecto | Qué hace |
 |---|---|---|
@@ -92,6 +92,7 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `context` | `.` | Directorio de contexto. |
 | `dockerfile` | `Dockerfile` | Ruta del Dockerfile. |
 | `push` | `true` | En `false` solo construye. |
+| `load` | `false` | Carga la imagen en el daemon local. Solo con `push` en `false` y una sola plataforma. |
 | `provenance` | `mode=max` | Procedencia de Buildx; se desactiva sola cuando `push` es `false`. |
 | `platforms` | `linux/amd64` | Plataformas separadas por comas. |
 | `build-args` | vacío | Argumentos, uno por línea. |
@@ -101,7 +102,7 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
 | `password` | vacío | Contraseña o token. |
 
-Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.4` incluye esta acción.
+Publica dos etiquetas, la del `ref` y `sha-<corto>`. Al publicar devuelve el `digest`; en todos los casos devuelve la etiqueta del `ref` en `tag`. Con `load` en `true`, esa etiqueta queda en el daemon local para inspeccionar o escanear la imagen en el mismo job; `push` tiene que ser `false` y la construcción de una sola plataforma. `load` no está en `v1.4`, `v1.5` ni `v1.6`: llega con la próxima etiqueta.
 
 ### `sast`
 
