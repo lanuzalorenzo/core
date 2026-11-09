@@ -25,7 +25,7 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
       - name: Comprobar enlaces
-        uses: lanuzalorenzo/core/actions/check-links@v1.3
+        uses: lanuzalorenzo/core/actions/check-links@v1.4
         with:
           root: ${{ inputs.root }}
           skip: ${{ inputs.skip }}
