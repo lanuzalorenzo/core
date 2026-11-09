@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-09).** Seis acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen y prueba de interfaz) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-09).** Ocho acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST y escaneo) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -101,7 +101,58 @@ Construye la imagen con Buildx, la publica en el registro y adjunta procedencia.
 | `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
 | `password` | vacío | Contraseña o token. |
 
-Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta `v1.4` ya está publicada y es la referencia de los consumidores.
+Publica dos etiquetas, la del `ref` y `sha-<corto>`, y devuelve el `digest` de la imagen. La etiqueta publicada incluye esta acción.
+
+### `sast`
+
+Inicializa CodeQL con las consultas de seguridad extendidas, compila el proyecto y publica el SARIF. El consumidor concede `security-events: write`; si sus paquetes vienen de un registro privado, añade `packages: read`.
+
+```yaml
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+steps:
+  - uses: actions/checkout@v7
+  - uses: lanuzalorenzo/core/actions/sast@v1.5
+    with:
+      languages: csharp
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `languages` | obligatorio | Lenguajes de CodeQL separados por comas. |
+| `queries` | `security-extended` | Paquete de consultas. |
+| `category` | vacío | Categoría del análisis; vacío deja `/language:<lenguaje>`. |
+| `dotnet-version` | `10.0.x` | SDK que se instala cuando se analiza C#; vacío no lo instala. |
+
+### `scan`
+
+Ejecuta Trivy sobre dependencias (`fs`), una imagen (`image`) o infraestructura como código (`config`), falla cuando hay hallazgos en el umbral y publica el SARIF. El consumidor concede `security-events: write` cuando `upload` es `true`.
+
+```yaml
+- uses: lanuzalorenzo/core/actions/scan@v1.5
+  with:
+    scan-type: image
+    image-ref: ecommerce-api:${{ github.sha }}
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `scan-type` | `fs` | `fs`, `image` o `config`. |
+| `scan-ref` | `.` | Ruta que se escanea en `fs` y `config`. |
+| `image-ref` | vacío | Imagen que se escanea; obligatoria en `image`. |
+| `severity` | `CRITICAL,HIGH` | Severidades que cuentan como hallazgo. |
+| `exit-code` | `1` | Código de salida cuando se supera el umbral. |
+| `ignore-unfixed` | `true` | Omite vulnerabilidades sin corrección en `fs` e `image`. |
+| `skip-dirs` | `**/.git` | Directorios omitidos en `fs`. |
+| `trivyignores` | vacío | Archivo de excepciones; vacío deja el `.trivyignore` que exista. |
+| `output` | `trivy-<scan-type>.sarif` | Ruta del SARIF, relativa al workspace. |
+| `category` | `trivy-<scan-type>` | Categoría con la que se publica. |
+| `upload` | `true` | Publica el SARIF en code scanning. |
+
+El SARIF se limita a las severidades del umbral: los hallazgos por debajo de `severity` no se publican. Con `scan-type: fs` el consumidor restaura y compila antes, para que Trivy encuentre los manifiestos de dependencias. `trivyignores` y `output` se resuelven respecto al workspace.
 
 ### `browser-e2e`
 
@@ -163,7 +214,7 @@ jobs:
 | `dotnet-version` | `10.0.x` | SDK que se instala. |
 | `run-format` | `true` | Verifica el formato con `dotnet format`. |
 
-Las tareas de seguridad que dependen del código o de los permisos del consumidor —CodeQL, Trivy, escaneo de imagen y revisión de dependencias— se quedan en el repositorio que las necesita. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye ni usa credenciales. Construir y publicar una imagen es mecánica común y vive aquí; el consumidor decide qué imagen publica, con qué credenciales y qué permisos concede.
+Las tareas de seguridad que dependen del código, del umbral o de los permisos del consumidor se ejecutan con las acciones `sast` y `scan`; lo que cambia es qué se analiza, con qué umbral y quién concede `security-events: write`. La revisión de dependencias de un pull request sigue en su repositorio. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye ni usa credenciales. Construir y publicar una imagen es mecánica común y vive aquí; el consumidor decide qué imagen publica, con qué credenciales y qué permisos concede.
 
 ## Verificación
 
@@ -172,17 +223,18 @@ python3 actions/check-links/check_links.py . --skip tests/fixtures
 python3 actions/check-links/check_links.py tests/fixtures/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
+python3 tests/test_actions.py
 python3 -m compileall -q actions
 GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
   WAIT_URLS=http://127.0.0.1:8099/ WORKING_DIRECTORY=tests/fixtures/e2e \
   TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/` y `broken-apk-options/`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, ejecuta el contrato de `sast` y `scan`, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/`, `broken-apk-options/` y `scan/config/broken`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
-- `v1.4` es la referencia actual. La próxima etiqueta, `v1.5`, añade `browser-e2e` sobre `v1.4`, que sigue publicada y sigue siendo la referencia hasta que los consumidores suban. `v1.1` y `v1.2` también siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.4` es la referencia actual. La próxima etiqueta, `v1.5`, añade `browser-e2e`, `sast` y `scan` sobre `v1.4`, que sigue publicada y sigue siendo la referencia hasta que los consumidores suban. `v1.1` y `v1.2` también siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.

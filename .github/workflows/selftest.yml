@@ -29,6 +29,9 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
+      - name: El contrato de sast y scan se mantiene
+        run: python3 tests/test_actions.py
+
       - name: Las anclas reales pasan
         run: python3 actions/check-links/check_links.py tests/fixtures/ok
 
@@ -106,6 +109,65 @@ jobs:
             echo "Se esperaba el aviso de la URL que no responde"
             exit 1
           fi
+
+  scan:
+    name: Escaneo con Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: La fixture cerrada pasa
+        uses: ./actions/scan
+        with:
+          scan-type: config
+          scan-ref: tests/fixtures/scan/config/ok
+          output: ok.sarif
+          upload: "false"
+
+      - name: La fixture abierta falla
+        id: broken
+        continue-on-error: true
+        uses: ./actions/scan
+        with:
+          scan-type: config
+          scan-ref: tests/fixtures/scan/config/broken
+          output: broken.sarif
+          upload: "false"
+
+      - name: Exigir el código 1 en la fixture abierta
+        run: |
+          if [[ "${{ steps.broken.outcome }}" != "failure" ]]; then
+            echo "Se esperaba el código 1 en config/broken y el paso terminó en '${{ steps.broken.outcome }}'."
+            exit 1
+          fi
+
+      - name: Comprobar que el fallo viene del umbral
+        run: |
+          if [[ ! -f broken.sarif ]]; then
+            echo "No se generó broken.sarif: el fallo no fue un hallazgo."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+
+          try:
+              sarif = json.load(open("broken.sarif", encoding="utf-8"))
+          except (OSError, json.JSONDecodeError) as error:
+              raise SystemExit(f"No se pudo leer broken.sarif: {error}")
+
+          results = [
+              result
+              for run in sarif.get("runs", [])
+              for result in run.get("results", [])
+          ]
+          ids = {result.get("ruleId") for result in results}
+          if not ids & {"DS-0002", "DS002", "AVD-DS-0002"}:
+              raise SystemExit(
+                  "El SARIF no contiene un resultado DS002: "
+                  f"el fallo no fue el umbral esperado (reglas: {sorted(ids)})"
+              )
+          PY
 
   container-publish:
     name: Construcción de imagen
