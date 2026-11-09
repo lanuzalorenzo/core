@@ -148,10 +148,26 @@ jobs:
             echo "No se generó broken.sarif: el fallo no fue un hallazgo."
             exit 1
           fi
-          if ! grep -q 'DS002' broken.sarif; then
-            echo "El SARIF no contiene DS002: el fallo no fue el umbral esperado."
-            exit 1
-          fi
+          python3 - <<'PY'
+          import json
+
+          try:
+              sarif = json.load(open("broken.sarif", encoding="utf-8"))
+          except (OSError, json.JSONDecodeError) as error:
+              raise SystemExit(f"No se pudo leer broken.sarif: {error}")
+
+          results = [
+              result
+              for run in sarif.get("runs", [])
+              for result in run.get("results", [])
+          ]
+          ids = {result.get("ruleId") for result in results}
+          if not ids & {"DS002", "AVD-DS-0002"}:
+              raise SystemExit(
+                  "El SARIF no contiene un resultado DS002: "
+                  f"el fallo no fue el umbral esperado (reglas: {sorted(ids)})"
+              )
+          PY
 
   container-publish:
     name: Construcción de imagen

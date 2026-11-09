@@ -88,8 +88,15 @@ def check_scan(body):
     )
     require("version: 'v0.76.0'" in body, "scan: Trivy debe ir fijado en v0.76.0")
     require(
-        'TRIVY_SKIP_CHECK_UPDATE: "true"' in body,
+        re.search(r'TRIVY_SKIP_CHECK_UPDATE:\s*["\']?true["\']?', body) is not None,
         "scan: los checks de configuración deben viajar con el binario fijado",
+    )
+    normalized = re.sub(r"\s+", " ", body)
+    require(
+        'if [[ "$SCAN_TYPE" == "image" ]]; then ignore_unfixed="$IGNORE_UNFIXED" '
+        'skip_dirs="" elif [[ "$SCAN_TYPE" == "config" ]]; then '
+        'ignore_unfixed="false" skip_dirs=""' in normalized,
+        "scan: solo fs debe reenviar skip-dirs",
     )
     require(
         "github/codeql-action/upload-sarif@v4" in body,
