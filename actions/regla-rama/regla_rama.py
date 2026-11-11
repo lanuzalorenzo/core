@@ -31,9 +31,15 @@ from pathlib import Path
 NOMBRE = "main"
 
 
-def ejecutar(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+def ejecutar(
+    *args: str,
+    cwd: Path | None = None,
+    entrada: str | None = None,
+) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=False)
+        return subprocess.run(
+            args, cwd=cwd, input=entrada, capture_output=True, text=True, check=False
+        )
     except OSError as error:
         return subprocess.CompletedProcess(args, 127, "", str(error))
 

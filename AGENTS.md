@@ -27,6 +27,7 @@ python3 actions/check-links/check_links.py tests/fixtures/broken   # debe salir 
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 tests/test_actions.py
+python3 tests/test_regla_rama.py
 python3 -m compileall -q actions
 GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh WAIT_URLS=http://127.0.0.1:8099/ WORKING_DIRECTORY=tests/fixtures/e2e TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 gitleaks detect --source . --redact --exit-code 2
