@@ -52,7 +52,7 @@ Las acciones compartidas de [`lanuzalorenzo/core`](https://github.com/lanuzalore
 ## 2. Al abrir
 
 1. Cambia la visibilidad en los ajustes del repositorio. Es el paso que no se deshace con un clic.
-2. Protege la rama principal: pull request obligatoria, checks del CI, rama actualizada y sin bypass (nadie puede saltarse los checks).
+2. Protege la rama principal: pull request obligatoria, checks del CI, rama actualizada, historial lineal y sin bypass (nadie puede saltarse los checks). Se aplica con `regla-rama` de `core`, pasándole los checks del repositorio; no se configura a mano.
 3. Activa las funciones de seguridad que GitHub ofrece en públicos: aviso de secretos, análisis de código, avisos de Dependabot y aviso privado de vulnerabilidades.
 4. Comprueba que el repositorio se clona y que el CI arranca desde cero.
 
@@ -72,7 +72,7 @@ Las acciones compartidas de [`lanuzalorenzo/core`](https://github.com/lanuzalore
 - [ ] Metadatos y descripción listos.
 - [ ] Línea base cumplida: Gitleaks, Dependabot, permisos, checks y auditoría de dependencias.
 - [ ] Visibilidad cambiada.
-- [ ] Rama principal protegida con los checks del CI.
+- [ ] Rama principal protegida con los checks del CI, aplicada con `regla-rama` y sin bypass.
 - [ ] Funciones de seguridad activadas.
 - [ ] Comprobaciones repetidas después de abrir, con fecha y resultado.
 - [ ] Enlace desde el portfolio o el perfil, con motivo.

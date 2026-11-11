@@ -36,7 +36,7 @@ gitleaks detect --source . --redact --exit-code 2
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.6`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-links`, `dotnet`, `gitleaks`, `check-sshd-baseline` y `container-publish` están en `v1.4`; `browser-e2e`, en `v1.5`; `sast` y `scan`, en `v1.6`.
+- Los consumidores fijan una etiqueta (`v1.7`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-links`, `dotnet`, `gitleaks`, `check-sshd-baseline` y `container-publish` están en `v1.4`; `browser-e2e`, en `v1.5`; `sast` y `scan`, en `v1.6`; `regla-rama`, en `v1.7`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
 - La mecánica común, igual para todos los consumidores, vive aquí: comprobar enlaces, compilar y probar .NET, escanear secretos, leer un `Dockerfile`, construir y publicar una imagen, ejecutar CodeQL y ejecutar Trivy sobre dependencias, imagen o IaC. El consumidor aporta lo suyo: qué solución compila, qué imagen publica, en qué registro, con qué credenciales, qué lenguajes analiza, qué ruta o imagen escanea, con qué umbral y si publica el SARIF. La decisión y el permiso son suyos: `sast` exige `security-events: write`; `scan` solo lo necesita cuando `upload` no es `false`. El procedimiento no se duplica.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.

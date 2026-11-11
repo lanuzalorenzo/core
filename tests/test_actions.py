@@ -17,6 +17,10 @@ def read(action):
     return (ROOT / "actions" / action / "action.yml").read_text(encoding="utf-8")
 
 
+def read_script(action, nombre):
+    return (ROOT / "actions" / action / nombre).read_text(encoding="utf-8")
+
+
 def input_block(body, name):
     match = re.search(
         rf"^  {re.escape(name)}:\n((?:(?:    .*)?\n)*)", body, re.MULTILINE
@@ -120,6 +124,51 @@ def check_scan(body):
     )
 
 
+def check_regla_rama(body, script):
+    require(
+        input_default(body, "repo") == "${{ github.repository }}",
+        "regla-rama: 'repo' debe usar github.repository por defecto",
+    )
+    for nombre in ("checks", "token"):
+        require(
+            re.search(
+                rf"^  {re.escape(nombre)}:\n((?:(?:    .*)?\n)*?)    required: true",
+                body,
+                re.MULTILINE,
+            )
+            is not None,
+            f"regla-rama: '{nombre}' debe ser obligatorio",
+        )
+    for tipo in (
+        '"deletion"',
+        '"non_fast_forward"',
+        '"pull_request"',
+        '"required_status_checks"',
+        '"required_linear_history"',
+    ):
+        require(tipo in script, f"regla-rama: falta la regla {tipo}")
+    require(
+        '"allowed_merge_methods": ["squash"]' in script,
+        "regla-rama: la fusión debe limitarse a squash",
+    )
+    require(
+        '"bypass_actors": []' in script,
+        "regla-rama: nadie debe saltarse la regla",
+    )
+    require(
+        '"strict_required_status_checks_policy": True' in script,
+        "regla-rama: la rama debe estar actualizada",
+    )
+    require(
+        "se niega a aplicarla" in script,
+        "regla-rama: sin checks debe negarse a aplicar la regla",
+    )
+    require(
+        '"~DEFAULT_BRANCH"' in script,
+        "regla-rama: la regla debe apuntar a la rama por defecto",
+    )
+
+
 def main():
     sast = read("sast")
     scan = read("scan")
@@ -131,11 +180,16 @@ def main():
     check_sast(sast)
     check_scan(scan)
 
+    regla = read("regla-rama")
+    check_common("regla-rama", regla)
+    check_pins("regla-rama", regla)
+    check_regla_rama(regla, read_script("regla-rama", "regla_rama.py"))
+
     if errors:
         for error in errors:
             print(f"FALLO: {error}")
         return 1
-    print("Contrato de sast y scan: OK")
+    print("Contrato de sast, scan y regla-rama: OK")
     return 0
 
 
