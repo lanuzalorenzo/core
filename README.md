@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-09).** Ocho acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST y escaneo) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-11).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -182,6 +182,39 @@ Arranca los servicios del consumidor, espera a que las URLs respondan y ejecuta 
 La auditoría de las dependencias de la prueba y su umbral se quedan en el repositorio que la escribe, como el resto de la revisión de dependencias. La acción no sube artefactos: cuando la prueba falla, escribe las últimas cincuenta líneas del arranque en la salida del job —el lanzador no debe imprimir secretos— y deja que el consumidor decida qué guardar. Si el lanzador termina antes de que una URL responda, falla en el acto, sin esperar el tiempo máximo.
 
 La etiqueta `v1.5` incluye esta acción. La verificación de este repositorio prueba la mecánica —arranque, espera, códigos y limpieza— con un servicio mínimo; el navegador y el recorrido real se prueban en un consumidor antes de dar la etiqueta por buena.
+
+### `regla-rama`
+
+Aplica la regla de rama que comparten los repositorios públicos: un ruleset `main` con pull request obligatoria —sin aprobaciones exigidas, porque el propietario es uno—, los checks del consumidor en estricto, historial lineal, sin borrado, sin force push, sin bypass y solo squash.
+
+Existe porque la regla vivía en la cabeza de quien abría el repositorio: dos repositorios acabaron con protección clásica y otro con la buena, y nadie lo notó hasta comparar. Los checks los pone el consumidor, que es lo único que cambia entre repositorios.
+
+```yaml
+- uses: lanuzalorenzo/core/actions/regla-rama@v1.7
+  with:
+    checks: |
+      Compilación, formato y pruebas (.NET 10)
+      Detección de secretos (historial completo)
+    token: ${{ secrets.REGLAS_TOKEN }}
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `repo` | `${{ github.repository }}` | Repositorio al que se aplica. |
+| `checks` | obligatorio | Un check por línea. Sin checks la acción falla: una regla que no exige nada no protege. |
+| `token` | obligatorio | Token con administración del repositorio. El `GITHUB_TOKEN` del workflow no puede cambiar reglas. |
+
+Es idempotente: si el ruleset `main` existe, lo reemplaza con esta forma exacta. Se puede ejecutar a mano, sin workflow, que es como se aplica al abrir un repositorio privado:
+
+```bash
+python3 actions/regla-rama/regla_rama.py --repo lanuzalorenzo/comicteca \
+  --check "Compilación, formato y pruebas (.NET 10)" \
+  --check "Detección de secretos (historial completo)"
+
+python3 actions/regla-rama/regla_rama.py --repo lanuzalorenzo/comicteca --listar
+```
+
+`--comprobar` imprime el cuerpo sin tocar GitHub. `--listar` enseña las reglas activas con sus checks y su lista de bypass.
 
 ## Workflows
 

@@ -82,6 +82,19 @@ Los comandos exactos son los que declare el `AGENTS.md` del repositorio generado
 
 Un repositorio público nace con `main` protegida, rama y pull request, checks obligatorios y Dependabot con auto-merge de parche y minor. La línea base completa —Gitleaks sobre el historial, permisos mínimos, auto-merge— es la misma que exige la [guía de publicación](publicar-un-repositorio.md) y no se repite aquí.
 
+La regla de rama no se configura a mano: se aplica con la acción `regla-rama` de `core`, que crea el ruleset `main` con pull request, los checks en estricto, historial lineal, sin borrado, sin force push y solo squash. Se le pasan los checks del repositorio, que son los únicos que cambian:
+
+```yaml
+- uses: lanuzalorenzo/core/actions/regla-rama@v1.7
+  with:
+    checks: |
+      Compilación, formato y pruebas (.NET 10)
+      Detección de secretos (historial completo)
+    token: ${{ secrets.REGLAS_TOKEN }}
+```
+
+Configurarla a mano es cómo se acaba con protección clásica en un repositorio y rulesets en los demás. `--listar` de la misma acción enseña lo que hay aplicado.
+
 El primer cambio entra por rama y pull request, nunca con un push directo a `main`. Si el remoto se crea vacío, el primer push publica la rama, no `main`.
 
 ## 8. Cuándo está hecho
@@ -101,5 +114,5 @@ Una plantilla que se genera y compila en local no demuestra que su CI funcione: 
 - [ ] `AGENTS.md` describe la estructura y la verificación reales.
 - [ ] Dependabot cubre todos los ecosistemas presentes y GitHub Actions.
 - [ ] Gitleaks limpio sobre el historial completo.
-- [ ] `main` protegida con rama, pull request y checks obligatorios.
+- [ ] `main` protegida con rama, pull request y checks obligatorios, aplicada con `regla-rama` y comprobada con `--listar`.
 - [ ] El estado declarado coincide con lo ejecutado.

@@ -1,0 +1,36 @@
+name: Aplicar la regla de rama
+description: Crea o actualiza el ruleset «main» con pull request, checks en estricto, historial lineal, sin borrado, sin force push y solo squash.
+inputs:
+  repo:
+    description: Repositorio en forma owner/nombre.
+    required: false
+    default: ${{ github.repository }}
+  checks:
+    description: Nombre de cada check obligatorio, uno por línea.
+    required: true
+  token:
+    description: Token con administración del repositorio; el GITHUB_TOKEN del workflow no basta para cambiar reglas.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Aplicar la regla
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repo }}
+        CHECKS: ${{ inputs.checks }}
+      run: |
+        set -euo pipefail
+        argumentos=()
+        while IFS= read -r linea; do
+          if [[ -n "${linea//[[:space:]]/}" ]]; then
+            argumentos+=(--check "$linea")
+          fi
+        done <<< "$CHECKS"
+        if [[ ${#argumentos[@]} -eq 0 ]]; then
+          echo "::error::Sin checks la regla no protege nada; revisa la entrada «checks»."
+          exit 1
+        fi
+        python3 "${{ github.action_path }}/regla_rama.py" \
+          --repo "$REPO" "${argumentos[@]}"
