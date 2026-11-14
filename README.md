@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-11).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Estado (2026-11-14).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -102,7 +102,15 @@ Construye la imagen con Buildx y la publica en el registro, o la deja en el daem
 | `username` | vacío | Usuario del registro. Sin usuario ni contraseña no hay login. |
 | `password` | vacío | Contraseña o token. |
 
-Publica dos etiquetas, la del `ref` y `sha-<corto>`. Al publicar devuelve el `digest`; en todos los casos devuelve la etiqueta del `ref` en `tag`. Con `load` en `true`, esa etiqueta queda en el daemon local para inspeccionar o escanear la imagen en el mismo job; `push` tiene que ser `false` y la construcción de una sola plataforma. `load` no está en `v1.4`, `v1.5` ni `v1.6`: llega con la próxima etiqueta.
+Publica dos etiquetas, la del `ref` y `sha-<corto>`. Al publicar devuelve el `digest`; en todos los casos devuelve la etiqueta del `ref` en `tag`. Con `load` en `true`, esa etiqueta queda en el daemon local para inspeccionar o escanear la imagen en el mismo job; `push` tiene que ser `false` y la construcción de una sola plataforma. `load` no está en `v1.4`, `v1.5` ni `v1.6`: llega con `v1.7`.
+
+```yaml
+- uses: lanuzalorenzo/core/actions/container-publish@v1.7
+  with:
+    image: owner/app
+    push: false
+    load: true
+```
 
 ### `sast`
 
@@ -276,7 +284,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
