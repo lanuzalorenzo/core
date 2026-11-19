@@ -6,7 +6,7 @@
 >
 > **Decisión:** [ADR-0001](adr/0001-plataforma-y-dependencias.md). Este documento es el procedimiento; el ADR guarda el motivo y las alternativas descartadas.
 >
-> **Estado:** Diseño (2026-11-19). No está aplicado todavía en los repositorios: describe el criterio acordado y cada paso se anota aquí al cerrarse.
+> **Estado:** Validado (2026-11-19) para la comprobación y el bloqueo de mayores: `check-platform@v1.8` corre en el job obligatorio de los cuatro consumidores y su CI está en verde —[lab-api](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/80), [plantillas](https://github.com/lanuzalorenzo/plantillas-dotnet/pull/26), [comicteca](https://github.com/lanuzalorenzo/comicteca/pull/34) y [shared](https://github.com/lanuzalorenzo/shared-dotnet/pull/17)—. · Diseño para la migración a .NET 12: el protocolo está escrito y no se ha ejecutado; se estrena en noviembre de 2027.
 
 Cambiar la versión de .NET no es instalar la última actualización de una aplicación: es cambiar los cimientos de una casa. Los paquetes, las imágenes de contenedor, el CI y las pruebas se apoyan en esa versión, y si una parte se mueve sola, la casa cruje. Por eso la versión de plataforma se elige y se migra, no se actualiza sola.
 
