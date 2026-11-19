@@ -1,0 +1,28 @@
+name: Comprobar la versión de plataforma
+description: Falla si un paquete de la familia de plataforma, una imagen de .NET o el SDK del CI no coincide con el TargetFramework.
+inputs:
+  root:
+    description: Directorio que se revisa, relativo al workspace.
+    required: false
+    default: "."
+  skip:
+    description: Directorios a omitir, separados por comas.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Revisar la versión de plataforma
+      shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_SKIP: ${{ inputs.skip }}
+      run: |
+        args=("$INPUT_ROOT")
+        IFS=',' read -ra dirs <<< "$INPUT_SKIP"
+        for dir in "${dirs[@]}"; do
+          dir="${dir#"${dir%%[![:space:]]*}"}"
+          dir="${dir%"${dir##*[![:space:]]}"}"
+          [[ -n "$dir" ]] && args+=(--skip "$dir")
+        done
+        python3 "${{ github.action_path }}/check_platform.py" "${args[@]}"

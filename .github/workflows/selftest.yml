@@ -46,6 +46,33 @@ jobs:
             exit 1
           fi
 
+      - name: Las versiones de plataforma coherentes pasan
+        uses: ./actions/check-platform
+        with:
+          root: tests/fixtures/plataforma/ok
+
+      - name: Una versión de plataforma incoherente falla
+        run: |
+          set +e
+          python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken
+          code=$?
+          set -e
+          if [[ "$code" -ne 1 ]]; then
+            echo "Se esperaba el código 1 y llegó $code"
+            exit 1
+          fi
+
+      - name: Sin destino no hay verde
+        run: |
+          set +e
+          python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/vacio
+          code=$?
+          set -e
+          if [[ "$code" -ne 1 ]]; then
+            echo "Se esperaba el código 1 y llegó $code"
+            exit 1
+          fi
+
   sshd-baseline:
     name: Baseline de sshd
     runs-on: ubuntu-latest

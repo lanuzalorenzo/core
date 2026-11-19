@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Resumen (2026-11-14).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Resumen (2026-11-19).** Diez acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo, regla de rama y versión de plataforma) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -224,6 +224,29 @@ python3 actions/regla-rama/regla_rama.py --repo lanuzalorenzo/comicteca --listar
 
 `--comprobar` imprime el cuerpo sin tocar GitHub. `--listar` enseña las reglas activas con sus checks y su lista de bypass.
 
+### `check-platform`
+
+Comprueba que la familia de plataforma siga al `TargetFramework`: los paquetes que publica el propio .NET, las imágenes `mcr.microsoft.com/dotnet/*` y el SDK de `global.json` y del CI. Si no encuentra el destino, falla: una puerta que no puede comprobar no da verde.
+
+```yaml
+- uses: lanuzalorenzo/core/actions/check-platform@v1.8
+  with:
+    root: .
+    skip: src,dist
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `root` | `.` | Directorio que se revisa, relativo al workspace. |
+| `skip` | vacío | Directorios que no se recorren, separados por comas. |
+
+La regla y su motivo están en el [ADR-0001](docs/adr/0001-plataforma-y-dependencias.md); el procedimiento, en [`docs/versiones-y-dependencias.md`](docs/versiones-y-dependencias.md). Se puede ejecutar a mano:
+
+```bash
+python3 actions/check-platform/check_platform.py .
+python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken   # debe salir 1
+```
+
 ## Workflows
 
 ### `checks.yml`
@@ -266,6 +289,10 @@ El procedimiento para dar de alta un repositorio —qué pieza usar, licencia y 
 
 El procedimiento para pasar un repositorio de privado a público —historial, licencia, datos, metadatos, línea base, protección y enlaces— está en [`docs/publicar-un-repositorio.md`](docs/publicar-un-repositorio.md). Las acciones de este repositorio son la parte mecánica de esa línea base.
 
+## Versiones y dependencias
+
+El criterio sobre la versión de .NET, las actualizaciones mayores y las dependencias directas y transitivas está en el [ADR-0001](docs/adr/0001-plataforma-y-dependencias.md); el procedimiento, en [`docs/versiones-y-dependencias.md`](docs/versiones-y-dependencias.md).
+
 ## Verificación
 
 ```bash
@@ -275,6 +302,8 @@ python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/o
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 tests/test_actions.py
 python3 -m compileall -q actions
+python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/ok
+python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken   # debe salir 1
 GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
   WAIT_URLS=http://127.0.0.1:8099/ WORKING_DIRECTORY=tests/fixtures/e2e \
   TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
@@ -284,7 +313,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.
