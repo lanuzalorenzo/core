@@ -49,7 +49,19 @@ Las dos terminan el mismo día. Pasar a .NET 11 no alarga la vida del proyecto: 
 - **La ventana se abre con esa LTS y se cierra antes del mantenimiento.** Los últimos seis meses de una versión son solo de seguridad. Para .NET 10, la migración se hace entre noviembre de 2027 y mayo de 2028.
 - **Antes de la ventana no se abre.** Una pull request que proponga el salto se cierra con el motivo, y si el caso se repite, se bloquea en Dependabot.
 
-Una migración toca el quinteto de la tabla de §1 en un solo cambio, con su ADR, su rama y su CI. No se mezcla con trabajo funcional. Se estrena en el banco de pruebas y solo después pasa a la aplicación principal.
+En el calendario: **10 LTS en uso**, **11 STS que convive y no entra como destino** —los mayores de la familia están bloqueados y, donde `global.json` fija la rama, su SDK no compila—, **12 LTS como destino**.
+
+### Los pasos de una migración
+
+1. Escribir el ADR del repositorio con la versión de destino, la ventana y la evidencia que cierra el cambio.
+2. Subir `global.json` al SDK de la versión nueva, sin cambiar `rollForward`, si el repositorio lo fija.
+3. Cambiar el `TargetFramework` y las versiones de la familia en `Directory.Packages.props`.
+4. Subir las imágenes del `Dockerfile` al mismo mayor.
+5. Subir el `dotnet-version` del CI y lo que la infraestructura declare: el `linuxFxVersion` de una Function, el SDK de su proyecto y lo que el Bicep fije.
+6. Revisar que las migraciones de EF Core siguen aplicando, si hay base de datos, y actualizar `AGENTS.md`, `README.md` y los documentos que declaren la versión.
+7. Estrenarlo en el banco de pruebas con el CI en verde y adoptarlo después en cada consumidor, con su propia pull request y su evidencia.
+
+La migración toca los cinco sitios de §1 y, si el repositorio tiene infraestructura o Functions, también lo que declare allí la versión; no se mezcla con trabajo funcional. El [ADR-0010 del banco](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/docs/adr/0010-plataforma-dotnet-y-ciclo-de-vida.md) es el caso detallado, con sus doce proyectos y su evidencia.
 
 ## 3. Qué cuenta como actualización mayor
 
@@ -86,6 +98,7 @@ Una migración toca el quinteto de la tabla de §1 en un solo cambio, con su ADR
 - `NuGetAudit` en modo `all` y `NU1901`–`NU1904` como errores en todos los repositorios: una vulnerabilidad conocida, directa o transitiva, rompe la compilación.
 - Cuando el informe y la compilación discrepen, manda la compilación. Un paso que solo informa no autoriza a fusionar.
 - Las dependencias `npm` de la prueba de interfaz se auditan con `npm audit --audit-level=high`.
+- Los plazos por severidad y el informe semanal son los de la [política de dependencias del banco de pruebas](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/docs/dependencias.md); aquí no se copian.
 - Si una transitiva vulnerable no tiene versión corregida, se fija en la última disponible y se documenta el aviso junto a la línea que lo silencia, con identificador y fecha. Se retira cuando salga la corrección. No hay silencios globales.
 
 ## 7. Discrepancias
