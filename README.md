@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Estado (2026-11-14).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Resumen (2026-11-14).** Nueve acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo y regla de rama) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
