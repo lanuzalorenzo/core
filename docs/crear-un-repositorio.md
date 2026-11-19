@@ -4,7 +4,7 @@
 >
 > **Qué resuelve:** qué pieza usar, cómo se elige la licencia, qué comprobaciones se ejecutan antes del primer commit y qué se da por hecho al terminar. No sustituye al criterio del propietario.
 >
-> **Estado:** Runbook preparado. No valida ningún repositorio concreto; cada alta se comprueba y se fecha por separado.
+> **Estado:** Runbook preparado (2026-11-19). Sin ejecutar; no valida ningún repositorio concreto y cada alta se comprueba y se fecha por separado.
 
 Crear un repositorio es como levantar una casa: los planos se copian fácil, pero la cimentación no se ve hasta que falta. Un repositorio sin licencia, sin escaneo de secretos o sin pull request obligatoria funciona igual el primer día; el problema aparece cuando alguien lo usa o cuando una credencial se cuela en el historial. Por eso el orden no es «crear el repositorio y luego añadir controles», sino crear el esqueleto con los controles dentro.
 

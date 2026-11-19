@@ -4,11 +4,15 @@ Automatización compartida de CI: acciones y workflows que los demás repositori
 
 ## Seguridad
 
-La línea base de los repos públicos se aplica aquí sin excepción: Gitleaks sobre el historial completo en CI, Dependabot para cada ecosistema que el repositorio use, permisos mínimos en cada workflow y `main` con rama y pull request.
+La línea base de los repos públicos se aplica aquí sin excepción: Gitleaks sobre el historial completo en CI, Dependabot con auto-merge de parche y minor para cada ecosistema que el repositorio use, permisos mínimos en cada workflow y `main` con rama y pull request.
 
 - No guardes secretos, credenciales ni datos de los repos consumidores. Los ejemplos usan valores ficticios.
 - Un workflow declara sus permisos: `contents: read` por defecto; escritura solo en el job que la necesita.
 - Las comprobaciones de seguridad no se relajan para que un cambio pase.
+
+## Estados
+
+El `README.md` abre con `Resumen (AAAA-MM-DD)`: es un índice y no declara madurez. El estado vive en cada artefacto que lo tenga, como los runbooks de `docs/`.
 
 ## Estructura
 
