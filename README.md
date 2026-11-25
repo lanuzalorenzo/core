@@ -351,7 +351,7 @@ El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el reposit
 
 ## Versionado
 
-- La próxima etiqueta, `v1.9`, añade `check-linea-base`; se publica cuando la acción se haya probado en un consumidor. `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- `v1.9` añade `check-linea-base` y está publicada; `comicteca` y `shared-dotnet` ya la fijan. `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - La capa de identidad usa su propia serie, `identidad-vX.Y.Z`; entra con `identidad-v2.0.0`, que se etiqueta al fusionar. No comparte la serie `v1.x` de las acciones ni la bloquea: un cambio incompatible de la capa sube su mayor, no el de las acciones.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
