@@ -32,6 +32,14 @@ jobs:
       - name: El contrato de sast y scan se mantiene
         run: python3 tests/test_actions.py
 
+      - name: La línea base pasa y falla con sus fixtures
+        run: python3 tests/test_check_linea_base.py
+
+      - name: La fixture completa pasa por la acción
+        uses: ./actions/check-linea-base
+        with:
+          root: tests/fixtures/linea-base/ok
+
       - name: Las anclas reales pasan
         run: python3 actions/check-links/check_links.py tests/fixtures/ok
 

@@ -33,6 +33,7 @@ python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/o
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 tests/test_actions.py
 python3 tests/test_regla_rama.py
+python3 tests/test_check_linea_base.py
 python3 -m compileall -q actions
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/ok
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken   # debe salir 1
@@ -41,11 +42,11 @@ GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh WAIT_URLS=http:
 gitleaks detect --source . --redact --exit-code 2
 ```
 
-`selftest.yml` repite las comprobaciones de enlaces y de sshd, ejecuta el contrato de `sast` y `scan`, construye la imagen de prueba sin publicarla, prueba la acción de interfaz contra un servicio mínimo, escanea secretos y exige que un ancla inexistente, cada uno de los tres Dockerfiles abiertos y la fixture `scan/config/broken` devuelvan 1. Un cambio en `dotnet`, en `check-platform`, en `sast`, en `scan`, en `browser-e2e` o en la publicación se prueba en un repositorio consumidor antes de etiquetar.
+`selftest.yml` repite las comprobaciones de enlaces y de sshd, ejecuta el contrato de `sast` y `scan`, prueba las fixtures de `check-linea-base` y la acción contra la fixture completa, construye la imagen de prueba sin publicarla, prueba la acción de interfaz contra un servicio mínimo, escanea secretos y exige que un ancla inexistente, cada uno de los tres Dockerfiles abiertos y la fixture `scan/config/broken` devuelvan 1. Un cambio en `dotnet`, en `check-platform`, en `sast`, en `scan`, en `browser-e2e`, en `check-linea-base` o en la publicación se prueba en un repositorio consumidor antes de etiquetar.
 
 ## Contrato
 
-- Los consumidores fijan una etiqueta (`v1.8`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-links`, `dotnet`, `gitleaks`, `check-sshd-baseline` y `container-publish` están en `v1.4`, con `load` en `container-publish` desde `v1.7`; `browser-e2e`, en `v1.5`; `sast` y `scan`, en `v1.6`; `regla-rama`, en `v1.7`; `check-platform`, en `v1.8`.
+- Los consumidores fijan una etiqueta (`v1.8`): no se mueve una etiqueta publicada. Un cambio incompatible abre `v2`. `check-links`, `dotnet`, `gitleaks`, `check-sshd-baseline` y `container-publish` están en `v1.4`, con `load` en `container-publish` desde `v1.7`; `browser-e2e`, en `v1.5`; `sast` y `scan`, en `v1.6`; `regla-rama`, en `v1.7`; `check-platform`, en `v1.8`; `check-linea-base` entra con `v1.9`.
 - El workflow hace `checkout` y llama a la acción; no dupliques pasos entre ambos.
 - La mecánica común, igual para todos los consumidores, vive aquí: comprobar enlaces, compilar y probar .NET, escanear secretos, leer un `Dockerfile`, construir y publicar una imagen, ejecutar CodeQL y ejecutar Trivy sobre dependencias, imagen o IaC. El consumidor aporta lo suyo: qué solución compila, qué imagen publica, en qué registro, con qué credenciales, qué lenguajes analiza, qué ruta o imagen escanea, con qué umbral y si publica el SARIF. La decisión y el permiso son suyos: `sast` exige `security-events: write`; `scan` solo lo necesita cuando `upload` no es `false`. El procedimiento no se duplica.
 - Un cambio de acción se prueba en un repositorio consumidor antes de dar la etiqueta por buena.

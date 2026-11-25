@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Resumen (2026-11-19).** Diez acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo, regla de rama y versión de plataforma) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Resumen (2026-11-25).** Once acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo, regla de rama, versión de plataforma y comprobación de línea base) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -79,6 +79,30 @@ También se puede ejecutar a mano:
 
 ```bash
 python3 actions/check-sshd-baseline/check_sshd_baseline.py .
+```
+
+### `check-linea-base`
+
+Lee la sección `## Línea base` del `AGENTS.md` y los workflows, y comprueba que lo exigido y lo declarado como `Validado` aparezca en el CI: Gitleaks, Dependabot con auto-merge, permisos mínimos, acciones fijadas a una versión, secretos sin valores escritos, enlaces cuando hay documentación, dependencias cuando hay manifiestos y `sast`, contenedor, IaC, SCA o ruleset cuando se declaran. No consulta la API de GitHub ni ejecuta el CI: lee archivos.
+
+```yaml
+- uses: actions/checkout@v7
+- uses: lanuzalorenzo/core/actions/check-linea-base@v1.9
+  with:
+    root: .
+    workflow: .github/workflows/ci.yml,.github/workflows/dependabot-auto-merge.yml
+```
+
+| Entrada | Por defecto | Qué hace |
+|---|---|---|
+| `root` | `.` | Raíz del repositorio, relativa al workspace. |
+| `agents` | `AGENTS.md` | `AGENTS.md` que contiene `## Línea base`, relativo a la raíz. |
+| `workflow` | vacío | Workflows separados por comas, relativos a la raíz. Vacío revisa todos los de `.github/workflows`. |
+
+Devuelve en `findings` el número de hallazgos; cada uno sale como `ERROR LBnnn` con archivo y línea. Los estados y el formato de la sección se describen en [`actions/check-linea-base/README.md`](actions/check-linea-base/README.md). Si `workflow` no está vacío, esa lista es también el conjunto sobre el que se calculan las comprobaciones globales: incluye todos los workflows relevantes, no solo uno. Las comprobaciones de YAML son textuales y no sustituyen al CI ni al revisor.
+
+```bash
+python3 actions/check-linea-base/check_linea_base.py --root .
 ```
 
 ### `container-publish`
@@ -301,6 +325,8 @@ python3 actions/check-links/check_links.py tests/fixtures/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/ok
 python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/broken   # debe salir 1
 python3 tests/test_actions.py
+python3 tests/test_regla_rama.py
+python3 tests/test_check_linea_base.py
 python3 -m compileall -q actions
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/ok
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken   # debe salir 1
@@ -309,11 +335,11 @@ GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
   TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, ejecuta el contrato de `sast` y `scan`, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/`, `broken-apk-options/` y `scan/config/broken`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, ejecuta el contrato de `sast` y `scan`, prueba las fixtures de `check-linea-base` y la acción contra la fixture completa, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/`, `broken-apk-options/` y `scan/config/broken`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
-- `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- La próxima etiqueta, `v1.9`, añade `check-linea-base`; se publica cuando la acción se haya probado en un consumidor. `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.

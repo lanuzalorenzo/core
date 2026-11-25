@@ -1,0 +1,53 @@
+name: Comprobar la línea base
+description: Lee la sección «Línea base» del AGENTS.md y los workflows, y avisa de lo que falta o no se respalda.
+inputs:
+  root:
+    description: Raíz del repositorio que se revisa, relativa al workspace.
+    required: false
+    default: "."
+  agents:
+    description: Ruta del AGENTS.md relativa a la raíz.
+    required: false
+    default: "AGENTS.md"
+  workflow:
+    description: Workflows que se revisan, separados por comas y relativos a la raíz. Vacío revisa todos los de .github/workflows.
+    required: false
+    default: ""
+outputs:
+  findings:
+    description: Número de hallazgos; cero deja el paso en verde.
+    value: ${{ steps.check.outputs.findings }}
+runs:
+  using: composite
+  steps:
+    - name: Revisar la línea base
+      id: check
+      shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_AGENTS: ${{ inputs.agents }}
+        INPUT_WORKFLOW: ${{ inputs.workflow }}
+      run: |
+        args=(--root "$INPUT_ROOT" --agents "$INPUT_AGENTS")
+        if [[ -n "$INPUT_WORKFLOW" ]]; then
+          IFS=',' read -ra items <<< "$INPUT_WORKFLOW"
+          for item in "${items[@]}"; do
+            item="${item#"${item%%[![:space:]]*}"}"
+            item="${item%"${item##*[![:space:]]}"}"
+            [[ -n "$item" ]] && args+=(--workflow "$item")
+          done
+        fi
+
+        report="${RUNNER_TEMP:-/tmp}/check-linea-base.json"
+        rm -f "$report"
+        set +e
+        python3 "${{ github.action_path }}/check_linea_base.py" "${args[@]}" --report "$report"
+        code=$?
+        set -e
+
+        findings=0
+        if [[ -f "$report" ]]; then
+          findings="$(python3 -c 'import json, sys; print(len(json.load(open(sys.argv[1], encoding="utf-8"))))' "$report")"
+        fi
+        echo "findings=$findings" >> "${GITHUB_OUTPUT:-/dev/null}"
+        exit "$code"

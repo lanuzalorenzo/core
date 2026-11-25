@@ -4,7 +4,7 @@
 >
 > **Qué resuelve:** el orden de los pasos y las comprobaciones mínimas. No sustituye al criterio del propietario ni es asesoramiento legal.
 >
-> **Estado:** Validado (2026-11-11). Se siguió en la apertura de Comicteca; el CI [43091975270](https://github.com/lanuzalorenzo/comicteca/actions/runs/43091975270) repitió el escaneo sobre el historial completo. No avala aperturas futuras: cada una se comprueba y se fecha por separado.
+> **Estado:** Validado (2026-11-11); actualizado (2026-11-25) con la sección `## Línea base` y `check-linea-base`, sin reejecutar la apertura. Se siguió en la apertura de Comicteca; el CI [43091975270](https://github.com/lanuzalorenzo/comicteca/actions/runs/43091975270) repitió el escaneo sobre el historial completo. No avala aperturas futuras: cada una se comprueba y se fecha por separado.
 
 Abrir un repositorio es como abrir las cortinas de una casa: todo lo que estaba dentro se ve, incluido lo que se guardó en un cajón y se olvidó. La diferencia es que aquí se puede limpiar antes. El orden importa: primero se limpia, después se abre y al final se cierra con llave.
 
@@ -47,7 +47,9 @@ Todo repositorio público cumple, como mínimo:
 - Análisis estático, infraestructura y contenedor cuando el repositorio los necesite.
 - **Secretos de Actions:** revisa que ningún workflow lleve valores escritos en el YAML. Los secretos guardados no se publican, pero el archivo sí se ve.
 
-Las acciones compartidas de [`lanuzalorenzo/core`](https://github.com/lanuzalorenzo/core) cubren enlaces, Gitleaks, .NET, baseline de sshd, publicación de imagen, interfaz, SAST y escaneo. Lo que falte se resuelve en la plataforma, no copiando pasos.
+La línea base se declara en la sección `## Línea base` del `AGENTS.md`, con una fila por control (`Id`, `Estado`, `Evidencia`) o una viñeta con el control en negrita. La acción `check-linea-base` de `core` lee esa sección y los workflows y avisa de lo que falta; una fila `Validado` necesita una evidencia localizable, como un `run`, un `PR` o una ruta.
+
+Las acciones compartidas de [`lanuzalorenzo/core`](https://github.com/lanuzalorenzo/core) cubren enlaces, Gitleaks, .NET, baseline de sshd, publicación de imagen, interfaz, SAST, escaneo y comprobación de línea base. Lo que falte se resuelve en la plataforma, no copiando pasos.
 
 ## 2. Al abrir
 
