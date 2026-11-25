@@ -13,3 +13,7 @@ venv/
 
 # Sistema
 .DS_Store
+
+# Artefactos de la capa de identidad
+identidad/preview/
+identidad/ejemplo/salida/

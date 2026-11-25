@@ -4,7 +4,7 @@
 
 Automatización compartida de mis repositorios públicos: comprobaciones escritas una vez y llamadas desde cada CI. La lógica vive aquí; cada repositorio conserva su workflow de CI y sus permisos.
 
-> **Resumen (2026-11-25).** Once acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo, regla de rama, versión de plataforma y comprobación de línea base) y dos workflows reutilizables que envuelven las dos primeras. Versionado por etiqueta; los consumidores fijan la referencia.
+> **Resumen (2026-11-25).** Once acciones (enlaces, .NET, Gitleaks, baseline de sshd, publicación de imagen, prueba de interfaz, SAST, escaneo, regla de rama, versión de plataforma y comprobación de línea base), dos workflows reutilizables que envuelven las dos primeras y la capa de identidad —CSS, plantilla, shell y menú— que consumen las webs. Versionado por etiqueta; los consumidores fijan la referencia.
 
 ## Acciones
 
@@ -305,6 +305,15 @@ jobs:
 
 Las tareas de seguridad que dependen del código, del umbral o de los permisos del consumidor se ejecutan con las acciones `sast` y `scan`; lo que cambia es qué se analiza, con qué umbral y quién concede `security-events: write`. La revisión de dependencias de un pull request sigue en su repositorio. El escaneo de secretos no depende del código: se centraliza aquí. La lectura estática de un `Dockerfile` tampoco: no construye ni usa credenciales. Construir y publicar una imagen es mecánica común y vive aquí; el consumidor decide qué imagen publica, con qué credenciales y qué permisos concede.
 
+## Identidad
+
+La cabecera, el pie, la navegación, los botones y los tokens de la marca viven en [`identidad/`](identidad/LEEME.md). Una web la consume copiando el paquete a `_identidad/` y comprobando sus huellas; no rehace la cabecera ni mantiene una copia con cambios. La preview compone una página con la propia plantilla:
+
+```bash
+python3 identidad/verificar.py
+python3 identidad/preview.py --check
+```
+
 ## Crear un repositorio
 
 El procedimiento para dar de alta un repositorio —qué pieza usar, licencia y titular, generación, CI, comprobaciones y primer push— está en [`docs/crear-un-repositorio.md`](docs/crear-un-repositorio.md). Un repositorio nace de una plantilla o de un esqueleto con la línea base, no de una copia de otro.
@@ -327,7 +336,10 @@ python3 actions/check-sshd-baseline/check_sshd_baseline.py tests/fixtures/sshd/b
 python3 tests/test_actions.py
 python3 tests/test_regla_rama.py
 python3 tests/test_check_linea_base.py
-python3 -m compileall -q actions
+python3 tests/test_identidad.py
+python3 identidad/verificar.py
+python3 identidad/preview.py --check
+python3 -m compileall -q actions identidad
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/ok
 python3 actions/check-platform/check_platform.py tests/fixtures/plataforma/broken   # debe salir 1
 GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
@@ -335,11 +347,12 @@ GITHUB_WORKSPACE="$PWD" START_SCRIPT=tests/fixtures/e2e/start.sh \
   TEST_COMMAND="node check.mjs" bash actions/browser-e2e/browser_e2e.sh
 ```
 
-El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, ejecuta el contrato de `sast` y `scan`, prueba las fixtures de `check-linea-base` y la acción contra la fixture completa, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/`, `broken-apk-options/` y `scan/config/broken`, prueba la acción de interfaz contra un servicio mínimo y comprueba que una URL que no responde devuelve 1. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
+El workflow `selftest.yml` repite las comprobaciones de enlaces sobre el repositorio y las fixtures, ejecuta el contrato de `sast` y `scan`, prueba las fixtures de `check-linea-base` y la acción contra la fixture completa, exige que `broken/` devuelva código 1, hace lo mismo con `broken-usepam/`, `broken-apk-options/` y `scan/config/broken`, prueba la acción de interfaz contra un servicio mínimo, comprueba que una URL que no responde devuelve 1 y verifica la capa de identidad —versión, huellas, preview y ejemplo— con su contrato de fallo. `compileall` es una comprobación local de sintaxis; el workflow no la ejecuta.
 
 ## Versionado
 
 - La próxima etiqueta, `v1.9`, añade `check-linea-base`; se publica cuando la acción se haya probado en un consumidor. `v1.8` añade `check-platform`; `v1.7` añade `regla-rama` y `load` en `container-publish`; `v1.6` añade `sast` y `scan` sobre `v1.5`, que añade `browser-e2e`; `v1.4` y anteriores siguen publicadas. Los consumidores fijan una etiqueta y Dependabot la sube; para fijar por seguridad, usa el SHA del commit.
+- La capa de identidad usa su propia serie, `identidad-vX.Y.Z`; entra con `identidad-v2.0.0`, que se etiqueta al fusionar. No comparte la serie `v1.x` de las acciones ni la bloquea: un cambio incompatible de la capa sube su mayor, no el de las acciones.
 - Un cambio incompatible abre `v2`; no se mueve una etiqueta publicada.
 
 Licencia: MIT.

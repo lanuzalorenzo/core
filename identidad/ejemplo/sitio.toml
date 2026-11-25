@@ -1,0 +1,34 @@
+# Sitio de ejemplo: una web nueva con la identidad.
+# Copia esta carpeta como punto de partida y cambia los textos y la nav.
+
+perfil = "publica"          # "publica" o "local"
+raiz = ""                   # prefijo de los recursos; "" en la raíz del sitio
+version = "1"               # se añade como ?v= a los estilos
+repo = "https://github.com/lanuzalorenzo/core"
+nota = "Ejemplo de la capa de identidad"
+estilos = ["_identidad/identidad.css"]
+
+[[nav]]
+href = "#perfil"
+etiqueta = "Perfil"
+
+[[nav]]
+grupo = "Proyectos y laboratorios"
+
+[[nav]]
+href = "api.html"
+etiqueta = "API"
+
+[[paginas]]
+fichero = "index.html"
+titulo = "Ejemplo — Lorenzo Lanuza"
+descripcion = "Página de ejemplo que usa la capa de identidad del sitio."
+canonical = "https://ejemplo.local/"
+contenido = "index.tpl"
+
+[[paginas]]
+fichero = "api.html"
+titulo = "API — Ejemplo"
+descripcion = "Segunda página del ejemplo, con la misma cabecera y el mismo pie."
+canonical = "https://ejemplo.local/api.html"
+contenido = "api.tpl"
